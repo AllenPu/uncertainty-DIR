@@ -144,15 +144,7 @@ model_dict = {
 }
 
 
-class Encoder(nn.Module):
-    def __init__(self, name='resnet18'):
-        super(Encoder, self).__init__()
-        model_fun, dim_in = model_dict[name]
-        self.encoder = model_fun()
 
-    def forward(self, x):
-        feat = self.encoder(x)
-        return feat
 
 
 class SupResNet(nn.Module):
