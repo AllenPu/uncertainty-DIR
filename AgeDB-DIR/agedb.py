@@ -25,37 +25,13 @@ class AgeDB(data.Dataset):
         self.group_num = group_num
         #
         self.aug = aug
-        self.elr_index_return = False
         #
-        if self.split == 'train':
-            # set up the three shot 
-            maj_shot, med_shot, min_shot = shot_count(self.df['age'])
-            #three_shots = {}
-            #
-            group_dic = {x: 0 for x in range(group_num)}
-            for i in range(len(self.df)):
-                row = self.df.iloc[i]
-                age = min(row['age'], 100)
-                #
-                shot_key = check_shot(age, maj_shot, med_shot, min_shot)
-                #three_shots[shot_key] = three_shots.get(shot_key, 0) + 1
-                #
-                group_id = math.floor(age/self.group_range)
-                group_dic[min(group_id, group_num-1)] += 1
-            list_group = sorted(group_dic.items(),
-                                key=lambda group_dic: group_dic[0])
-            # return how many number of samples in a group
-            self.group_list = [i[1] for i in list_group]
-            #self.three_shots = three_shots
-        else:
-            pass
 
 
     def __len__(self):
         return len(self.df)
 
-    def get_group_list(self):
-        return self.group_list
+
 
     # add to test the multi expert
     def __getitem__(self, index):
@@ -73,13 +49,8 @@ class AgeDB(data.Dataset):
         else:
             imgs = transform(img)
         label = np.asarray([row['age']]).astype('float32')
-        group_ = min(math.floor(label/self.group_range), self.group_num-1)
-        group = np.asarray([group_]).astype('float32')
-        #print(f' size  {img.shape}')
-        if self.elr_index_return:
-            return index, imgs, label, group
-        else:
-            return imgs, label, group
+
+        return imgs, label
         
 
         
@@ -88,17 +59,6 @@ class AgeDB(data.Dataset):
             self.aug=True
 
     
-    #def enable_elr_index_return(self, enable=False):
-    #    if enable:
-    #        self.elr_index_return=True
-
-
-
-    #def get_three_shots_num_list(self):
-    #    l = []
-    #    for i in  ['maj', 'med', 'min']:
-    #        l.append(self.three_shots[i])
-    #    return l
 
     
 
@@ -171,7 +131,6 @@ class AgeDB(data.Dataset):
         weights = [scaling * x for x in weights]
         return weights
     
-
 
 
 
