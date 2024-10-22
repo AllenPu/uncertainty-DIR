@@ -18,3 +18,9 @@ def beta_nll_loss(mean, variance, target, beta=0.5):
         loss = loss * (variance.detach() ** beta)
     loss = torch.sum(loss)
     return loss
+
+
+
+def ddifferential_ent_loss(feat):
+    
+    return loss
