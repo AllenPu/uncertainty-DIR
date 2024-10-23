@@ -49,9 +49,7 @@ class uncertain_ResNet(nn.Module):
         # mean ,std estimation networks
         self.emb2mu = nn.Linear(dim_in, 512)
         self.emb2std = nn.Linear(dim_in, 512)
-        # linear mapping to the regression
-        self.regressor = nn.Linear(dim_in, 1)
-    
+        #
 
 
     def estimate(self, emb):
@@ -67,11 +65,12 @@ class uncertain_ResNet(nn.Module):
         return mu + std * z
     
 
-    def forward(self, x):
+    def forward(self, x, y):
         feat = self.encoder(x)
         mean, std = self.estimate(feat)
         z_reparameterized = self.reparameterize(mean, std)
         y_pred = self.regressor(z_reparameterized)
+        #
         return z_reparameterized, y_pred
 
 
