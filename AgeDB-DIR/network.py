@@ -69,7 +69,7 @@ class uncertain_ResNet(nn.Module):
         feat = self.encoder(x)
         mean, std = self.estimate(feat)
         z_reparameterized = self.reparameterize(mean, std)
-        y_pred = self.regressor(z_reparameterized)
+        y_pred = self.regressor(feat)
         #
         return z_reparameterized, y_pred
 

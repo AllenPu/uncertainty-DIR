@@ -51,10 +51,10 @@ class MargKernel(nn.Module):
         self.optimize_mu = args.optimize_mu
         self.K = args.marg_modes if self.optimize_mu else args.batch_size
         self.d = zc_dim
+        # K is the batch size, d is the feature dimentsion
         self.use_tanh = args.use_tanh
         self.init_std = args.init_std
         super(MargKernel, self).__init__()
-
         self.logC = torch.tensor([-self.d / 2 * np.log(2 * np.pi)])
         # mean : a
         init_samples = self.init_std * torch.randn(self.K, self.d)
