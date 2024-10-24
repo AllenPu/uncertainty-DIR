@@ -40,8 +40,8 @@ class ResNet_regression(nn.Module):
         return y_hat, z
     
 
-
-class uncertain_ResNet(nn.Module):
+# reparameterization for mu and sigma in ResNet
+class reparam_ResNet(nn.Module):
     def __init__(self, name, args=None):
         super(ResNet_regression, self).__init__()
         model_fun, dim_in = model_dict[name]
@@ -75,19 +75,19 @@ class uncertain_ResNet(nn.Module):
 
 
 
+#########################################################################################################
 
-
-class Regression_guassian_likelihood(nn.Module):
+class Guassian_uncertain_ResNet(nn.Module):
     def __init__(self, name='resnet50', norm=False, weight_norm= False):
-        super(Regression_guassian_likelihood, self).__init__()
+        super(Guassian_uncertain_ResNet, self).__init__()
         backbone, dim_in = model_dict[name]
         self.encoder = backbone()
         self.norm = norm
         self.weight_norm = weight_norm
-        #if self.weight_norm:
-        #    self.regressor = torch.nn.utils.weight_norm(nn.Linear(dim_in, 2), name='weight')
-        #else:
-        #   self.regressor = nn.Linear(dim_in, 2)
+        if self.weight_norm:
+            self.regressor = torch.nn.utils.weight_norm(nn.Linear(dim_in, 2), name='weight')
+        else:
+           self.regressor = nn.Linear(dim_in, 2)
         self.guassian_head = GaussianLikelihoodHead(inp_dim=dim_in, outp_dim=1)
         
 
@@ -100,6 +100,7 @@ class Regression_guassian_likelihood(nn.Module):
         out = self.guassian_head(feat)
         out_ = torch.chunk(out,2,dim=1)
         return feat, out_[0], out_[1]
+
 
 
 class GaussianLikelihoodHead(nn.Module):
