@@ -10,13 +10,14 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, soft_labeling, asymmetric_soft_labeling, SoftCrossEntropy
+from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced 
 import torch
 from loss import *
 from network import *
 import torch.optim as optim
 import time
 from scipy.stats import gmean
+
 
 
 # current sota 7.73, 7.46, 7.76, 10.08
@@ -127,158 +128,82 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, group_list, train_labels
 
 
-def train_one_epoch(model, train_loader, ce_loss, mse_loss, opt, args, group_list):
-    sigma, ranked_contra, contra_ratio, temp, g_dis, gamma = \
-            args.sigma, args.ranked_contra, args.contra_ratio, args.temp, args.g_dis, args.gamma
+def train_one_epoch(args, model, train_loader,  opt, losses, opts):
     model.train()
-    ranges = int(100/args.groups)
     #
-    for idx, (x, y, g) in enumerate(train_loader):
+    mse_loss, mi_loss = losses
+    opt_model, opt_mi = opts
+    #
+    for idx, (x, y) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         opt.zero_grad()
-        x, y, g = x.to(device), y.to(device), g.to(device)
+        x, y  = x.to(device), y.to(device)
         #
-        y_output, z = model(x)
+        z, y_pred, var_pred = model(x)
         #
-        y_chunk = torch.chunk(y_output, 2, dim=1)
-        g_pred, y_pred = y_chunk[0], y_chunk[1]
+        mi = mi_loss.learning_loss(z)
         #
-        g_index = torch.argmax(g_pred, dim=1).unsqueeze(-1)
-        #print('g_hat ', g_hat)
+        opt_mi.zero_grad()
+        mi.backward()
+        opt_mi.step()
         #
-        y_hat = torch.gather(y_pred, dim=1, index=g.to(torch.int64))
-        #
-        loss = 0
-        #
-        loss_mse = mse_loss(y_hat, y)
-        #
-        loss_mse = sigma*loss_mse
-        # add mse loss
-        loss += loss_mse
-        #
-        # add ce based loss
-        if args.ce:
-            loss_ce = ce_loss(g_pred, g.squeeze().long())
-            loss += loss_ce       
-        #
-        # add ranked contrastive loss
-        if ranked_contra and not args.ce:
-            loss_contra = contra_ratio * ce_loss(z, g)
-            loss += loss_contra
-            #ce = F.cross_entropy(g_pred, g.squeeze(-1).long())
-            #print(f" loss contra is {loss_contra.item()} ce is {ce}")
+        mse = mse_loss(y_pred, y)
+        opt_model.zero_grad()
+        mse.backward()
+        opt_model.step()
 
-        # add soft label based loss
-        if args.soft_label:
-            g_soft_label = soft_labeling(g, args).to(device)
-            if args.asymm:
-                 g_soft_label = asymmetric_soft_labeling(group_list, g_soft_label)
-            loss_ce_soft = SoftCrossEntropy(g_pred, g_soft_label)
-            loss += loss_ce_soft
-        #
-        #
-        loss.backward()
-        opt.step()
     return model
 
 
 def test(model, test_loader, train_labels, args):
     model.eval()
     #
-    mse_gt = AverageMeter()
     mse_pred = AverageMeter()
-    acc_g = AverageMeter()
-    acc_mae_gt = AverageMeter()
-    acc_mae_pred = AverageMeter()
+    mae_pred = AverageMeter()
     # gmean
-    criterion_gmean_gt = nn.L1Loss(reduction='none')
     criterion_gmean_pred = nn.L1Loss(reduction='none')
-    gmean_loss_all_gt, gmean_loss_all_pred = [], [] 
+    gmean_loss_all_pred = [], [] 
     #
-    pred_gt, pred, labels, group, group_pred = [], [], [], [], []
+    pred, labels = []
     #
     with torch.no_grad():
         for idx, (x, y, g) in enumerate(test_loader):
             bsz = x.shape[0]
-            x, y, g = x.to(device), y.to(device), g.to(device)
-        #
-            labels.extend(y.data.cpu().numpy())
-        # for cls, cls for g
+            x, y= x.to(device), y.to(device)
             #
-            y_output, _ = model(x)
+            labels.extend(y.data.cpu().numpy())
+            #
+            _, y_pred, var_pred = model(x)
             #
             #print(f' y shape is  {y_output.shape}')
             #
-            y_chunk = torch.chunk(y_output, 2, dim=1)
-            g_hat, y_pred = y_chunk[0], y_chunk[1]
+            mae_y = torch.mean(torch.abs(y_pred- y))
+            mse_y_pred = F.mse_loss(y_pred, y)
             #
-            g_index = torch.argmax(g_hat, dim=1).unsqueeze(-1)
-            # newly added
-            #group.extend(g.cpu().numpy())
-            #group_pred.extend(g_index.cpu().numpy())
-            #
-            y_hat = torch.gather(y_pred, dim=1, index=g_index)
-            y_pred_gt = torch.gather(y_pred, dim=1, index=g.to(torch.int64))
-            #
-            acc3 = accuracy(g_hat, g, topk=(1,))
-            mae_y = torch.mean(torch.abs(y_hat - y))
-            mae_y_gt = torch.mean(torch.abs(y_pred_gt - y))
-            mse_y_pred = F.mse_loss(y_hat, y)
-            #
-            pred.extend(y_hat.data.cpu().numpy())
-            pred_gt.extend(y_pred_gt.data.cpu().numpy())
-            #
+            pred.extend(y_pred.data.cpu().numpy())
             # gmean
-            loss_all_gt = criterion_gmean_gt(y_pred_gt, y)
-            loss_all_pred = criterion_gmean_pred(y_hat, y)
-            gmean_loss_all_gt.extend(loss_all_gt.cpu().numpy())
+            loss_all_pred = criterion_gmean_pred(y_pred, y)
             gmean_loss_all_pred.extend(loss_all_pred.cpu().numpy())
             #
             mse_pred.update(mse_y_pred.item(), bsz)
             #
-            acc_g.update(acc3[0].item(), bsz)
-            acc_mae_gt.update(mae_y_gt.item(), bsz)
-            acc_mae_pred.update(mae_y.item(), bsz)
+            mae_pred.update(mae_y.item(), bsz)
         #
         # gmean
-        gmean_gt = gmean(np.hstack(gmean_loss_all_gt), axis=None).astype(float)
         gmean_pred = gmean(np.hstack(gmean_loss_all_pred), axis=None).astype(float)
         shot_pred = shot_metric(pred, labels, train_labels)
-        shot_pred_gt = shot_metric(pred_gt, labels, train_labels)
     print(f' MSE is {mse_pred.avg}')
 
-    return acc_g.avg, acc_mae_gt.avg, acc_mae_pred.avg, shot_pred, shot_pred_gt, gmean_gt, gmean_pred
+    return mae_pred.avg, shot_pred, gmean_pred
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
-def validate(model, val_loader, train_labels):
-    model.eval()
-    mae_pred = AverageMeter()
-    preds, labels, preds_gt = [], [], []
-    for idx, (x, y, g) in enumerate(val_loader):
-        bsz = x.shape[0]
-        x, y, g = x.to(device), y.to(device), g.to(device)
-        with torch.no_grad():
-            y_output,_ = model(x.to(torch.float32))
-            y_chunk = torch.chunk(y_output, 2, dim=1)
-            g_hat, y_hat = y_chunk[0], y_chunk[1]
-            g_index = torch.argmax(g_hat, dim=1).unsqueeze(-1)
-            y_predicted = torch.gather(y_hat, dim=1, index=g_index)
-            y_pred = torch.gather(y_hat, dim=1, index=g_index)
-            mae = torch.mean(torch.abs(y_predicted - y))
-            preds.extend(y_pred.data.cpu().numpy())
-            labels.extend(y.data.cpu().numpy())
-            preds_gt.extend(y_predicted.data.cpu().numpy())
-            mae_pred.update(mae.item(), bsz)
-
-    _, mean_L1_pred = balanced_metrics(np.hstack(preds), np.hstack(labels))
-    _, mean_L1_gt = balanced_metrics(np.hstack(preds_gt), np.hstack(labels))
-    shot_pred = shot_metric_balanced(preds, labels, train_labels)
-    shot_pred_gt = shot_metric_balanced(preds_gt, labels, train_labels)
-    return mae_pred.avg, mean_L1_pred, mean_L1_gt, shot_pred, shot_pred_gt
 
 
+######################
+# write log for the test
+#####################
 def write_log(store_name, results, shot_dict_pred, shot_dict_gt, args, current_task_name = None, mode = None ):
     with open(store_name, 'a+') as f:
         [g_pred, mae_gt, mae_pred, gmean_gt, gmean_pred] = results
@@ -313,11 +238,7 @@ def write_log(store_name, results, shot_dict_pred, shot_dict_gt, args, current_t
 if __name__ == '__main__':
     args = parser.parse_args()
     setup_seed(args.seed)
-    store_names = 'la_' + str(args.la) + '_tau_' + str(args.tau) + \
-        '_lr_' + str(args.lr) + '_g_' + str(args.groups) + '_model_' + str(args.model_depth) + \
-        '_epoch_' + str(args.epoch) + '_bs_' + str(args.batch_size) + '_sigma_' + str(args.sigma) + \
-        '_gamma_' + str(args.gamma) + '_ranked_' + str(args.ranked_contra) + '_temp_' + str(args.temp) + \
-        '_scale_' + str(args.scale) + '_fd_ratio_' + str(args.fd_ratio)
+    store_names = ''
     ####
     if args.soft_label:
         store_names = 'soft_label_' + 'ce_' + str(args.ce) +store_names
@@ -331,38 +252,22 @@ if __name__ == '__main__':
     #
     loss_mse = nn.MSELoss()
     #
-    model = ResNet_regression(args).to(device)
-    model_val = ResNet_regression(args).to(device)
+    model = Guassian_uncertain_ResNet()
     #
-    opt = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+    feature_dim = model.feature_dim
+    #
+    mi_estimator = KNIFE(args, feature_dim)
+    #
+    opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+    opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
     #
     best_bMAE = 100
     #
     for e in tqdm(range(args.epoch)):
         model = train_one_epoch(model, train_loader,
                                 loss_ce, loss_mse, opt, args, cls_num_list)
-        if e % 20 == 0 or e == (args.epoch - 1):
-            reg_mae,  mean_L1_pred,  mean_L1_gt, shot_dict_val_pred, shot_dict_val_pred_gt = validate(
-                model, val_loader, train_labels)
-            #
-            if best_bMAE > mean_L1_pred and e > 40:
-                best_bMAE = mean_L1_pred
-                torch.save(model.state_dict(),
-                           './models/model_{}.pth'.format(store_names))
-            with open('./output/' + store_name, 'a+') as f:
-                f.write(
-                    '=====-------------------------------------------------------------=====\n')
-                f.write(' In epoch {} gt regression mae is {} best bMAE is {}'.format(
-                    e, reg_mae, best_bMAE) + '\n')
-                f.write(' Val bMAE is pred {}, bMAE is gt {}'.format(
-                    mean_L1_pred,  mean_L1_gt) + '\n')
-                f.write(' Val Prediction Many: MAE {} Median: MAE {} Low: MAE {}'.format(shot_dict_val_pred['many']['l1'],
-                                                                                         shot_dict_val_pred['median']['l1'], shot_dict_val_pred['low']['l1']) + "\n")
-                f.write(' Val Gt Many: MAE {} Median: MAE {} Low: MAE {}'.format(shot_dict_val_pred_gt['many']['l1'],
-                                                                                 shot_dict_val_pred_gt['median']['l1'], shot_dict_val_pred_gt['low']['l1']) + "\n")
-                f.write(
-                    '---------------------------------------------------------------------\n')
-                f.close()
+        
+
 
     # test final model
     acc_g_avg, acc_mae_gt_avg, acc_mae_pred_avg, shot_pred, shot_pred_gt, gmean_gt, gmean_pred = test(
@@ -376,21 +281,5 @@ if __name__ == '__main__':
         file_name = args.output_file + 'no_contra.txt'
         write_log(file_name, results, shot_pred, shot_pred_gt,
                   args, current_task_name=store_names, mode='test')
-    #
-    # test val best model
-    model_val.load_state_dict(torch.load(
-        './models/model_{}.pth'.format(store_names)))
-    acc_g_avg_val, acc_mae_gt_avg_val, acc_mae_pred_avg_val, shot_pred_val, shot_pred_gt_val, gmean_gt, gmean_pred = \
-                                                                                test(model_val, test_loader, train_labels, args)
-    results_val = [acc_g_avg_val, acc_mae_gt_avg_val,
-                   acc_mae_pred_avg_val, gmean_gt, gmean_pred]
-    write_log('./output/'+store_name, results_val, shot_pred_val, shot_pred_gt_val, args)
-    if args.ranked_contra:
-        file_name = args.output_file + 'contra.txt'
-        write_log(file_name, results_val,
-              shot_pred_val, shot_pred_gt_val, args, current_task_name=store_names, mode = 'val')
-    else:
-        file_name = args.output_file + 'no_contra.txt'
-        write_log(file_name, results, shot_pred, shot_pred_gt, args, current_task_name=store_names, mode = 'val')
 
 

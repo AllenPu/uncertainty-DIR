@@ -89,7 +89,7 @@ class Guassian_uncertain_ResNet(nn.Module):
         else:
            self.regressor = nn.Linear(dim_in, 2)
         self.guassian_head = GaussianLikelihoodHead(inp_dim=dim_in, outp_dim=1)
-        
+        self.feature_dim = dim_in        
 
 
 
@@ -99,7 +99,10 @@ class Guassian_uncertain_ResNet(nn.Module):
             feat = F.normalize(feat, dim=-1)
         out = self.guassian_head(feat)
         out_ = torch.chunk(out,2,dim=1)
+        # feature, mean, variance
         return feat, out_[0], out_[1]
+    
+
 
 
 

@@ -26,9 +26,9 @@ def beta_nll_loss(mean, variance, target, beta=0.5):
 
 # estimate the p(z_d)
 class KNIFE(nn.Module):
-    def __init__(self, args, zc_dim, zd_dim):
+    def __init__(self, args, zc_dim):
         super(KNIFE, self).__init__()
-        self.kernel_marg = MargKernel(args, zc_dim, zd_dim)
+        self.kernel_marg = MargKernel(args, zc_dim)
 
     def forward(self, z_c, z_d):  # samples have shape [sample_size, dim]
         marg_ent = self.kernel_marg(z_d)
@@ -43,7 +43,7 @@ class KNIFE(nn.Module):
 
 class MargKernel(nn.Module):
     """
-    Used to compute p(z_d)
+    Used to compute p(z_d) but seems to compute the  -log p(z)
     """
 
     def __init__(self, args, zc_dim, init_samples=None):
@@ -92,6 +92,8 @@ class MargKernel(nn.Module):
 
     def update_parameters(self, z):
         self.means = z
+
+
 
     def forward(self, x):
         y = -self.logpdf(x)
