@@ -4,23 +4,37 @@ import torch.nn as nn
 
 
 
-def beta_nll_loss(mean, variance, target, beta=0.5):
+def beta_nll_loss(mean, ent, target, beta=0.5):
     """Compute beta-NLL loss
     
     :param mean: Predicted mean of shape B x D
-    :param variance: Predicted variance of shape B x D
+    :param variance: # Predicted variance of shape B x D
+                    the differential entropy of the variance
     :param target: Target of shape B x D
     :param beta: Parameter from range [0, 1] controlling relative 
         weighting between data points, where `0` corresponds to 
         high weight on low error points and `1` to an equal weighting.
     :returns: Loss per batch element of shape B
     """
+    #
+    variance = reverse_ent_to_var(ent)
+    #
+
     loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
 
     if beta > 0:
         loss = loss * (variance.detach() ** beta)
     loss = torch.sum(loss)
-    return loss
+    return variance, loss
+
+
+
+def reverse_ent_to_var(ent):
+    log_const = torch.Tensor([np.log(2*np.pi) + 1]).unsqueeze(-1)
+    log_const = log_const.repeat(ent.shape[0], 1)
+    logvar = torch.clamp(ent - log_const, 1e-8)
+    var = torch.exp(logvar, 1e-8, )
+    return var
 
 
 
@@ -30,12 +44,12 @@ class KNIFE(nn.Module):
         super(KNIFE, self).__init__()
         self.kernel_marg = MargKernel(args, zc_dim)
 
-    def forward(self, z_c, z_d):  # samples have shape [sample_size, dim]
-        marg_ent = self.kernel_marg(z_d)
+    def forward(self, z_c):  # samples have shape [sample_size, dim]
+        marg_ent = self.kernel_marg(z_c)
         return marg_ent
 
-    def learning_loss(self, z_c, z_d):
-        marg_ent = self.kernel_marg(z_d)
+    def learning_loss(self, z_c):
+        marg_ent = self.kernel_marg(z_c)
         return marg_ent 
 
 
@@ -46,10 +60,9 @@ class MargKernel(nn.Module):
     Used to compute p(z_d) but seems to compute the  -log p(z)
     """
 
-    def __init__(self, args, zc_dim, init_samples=None):
-
-        self.optimize_mu = args.optimize_mu
-        self.K = args.marg_modes if self.optimize_mu else args.batch_size
+    def __init__(self, batch_size, zc_dim, init_samples=None):
+        #
+        self.K = batch_size
         self.d = zc_dim
         # K is the batch size, d is the feature dimentsion
         self.init_std = 0.01
@@ -97,4 +110,7 @@ class MargKernel(nn.Module):
 
     def forward(self, x):
         y = -self.logpdf(x)
-        return torch.mean(y)
+        #
+        #return torch.mean(y)
+        return y.unsqueeze(-1)
+        # return a (bs, 1)

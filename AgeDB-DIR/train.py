@@ -128,10 +128,9 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, group_list, train_labels
 
 
-def train_one_epoch(args, model, train_loader,  opt, losses, opts):
+def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
     model.train()
     #
-    mse_loss, mi_loss = losses
     opt_model, opt_mi = opts
     #
     for idx, (x, y) in enumerate(train_loader):
@@ -142,15 +141,18 @@ def train_one_epoch(args, model, train_loader,  opt, losses, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        mi = mi_loss.learning_loss(z)
+        mi = mi_estimator.learning_loss(z)
         #
         opt_mi.zero_grad()
         mi.backward()
         opt_mi.step()
         #
-        mse = mse_loss(y_pred, y)
+        feature_mi = mi_estimator(z)
+        var, nll_loss = beta_nll_loss(y_pred, feature_mi, y)
+        variance_loss = F.mse_loss(var_pred, var)
+        loss = nll_loss + variance_loss
         opt_model.zero_grad()
-        mse.backward()
+        loss.backward()
         opt_model.step()
 
     return model
@@ -204,33 +206,16 @@ def test(model, test_loader, train_labels, args):
 ######################
 # write log for the test
 #####################
-def write_log(store_name, results, shot_dict_pred, shot_dict_gt, args, current_task_name = None, mode = None ):
+def write_log(store_name, mae_pred, shot_pred, gmean_pred):
     with open(store_name, 'a+') as f:
-        [g_pred, mae_gt, mae_pred, gmean_gt, gmean_pred] = results
         f.write('=---------------------------------------------------------------------=\n')
-        if current_task_name is not None and mode is not None:
-            f.write('  new_current task name is {}'.format(current_task_name)+"\n")
-            f.write(' new_current mode is {} '.format(mode) + "\n")
         f.write(f' store name is {store_name}')
-        #f.write(' tau is {} group is {} lr is {} model depth {} epoch {} time {}'.format(
-        #    args.tau, args.groups, args.lr, args.model_depth, args.epoch, time.asctime()) + "\n")
-        f.write(' acc of the group assinment is {}, \
-            mae of gt is {}, mae of pred is {}'.format( g_pred, mae_gt, mae_pred)+"\n")
         #
-        f.write(' Prediction Many: MAE {} Median: MAE {} Low: MAE {}'.format(shot_dict_pred['many']['l1'],
-                                                                             shot_dict_pred['median']['l1'], shot_dict_pred['low']['l1']) + "\n")
+        f.write(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
+                                                                             shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
         #
-        f.write(' Gt Many: MAE {} Median: MAE {} Low: MAE {}'.format(shot_dict_gt['many']['l1'],
-                                                                     shot_dict_gt['median']['l1'], shot_dict_gt['low']['l1']) + "\n")
-        #
-        #f.write(' CLS Gt Many: MAE {} Median: MAE {} Low: MAE {}'.format(shot_dict_cls['many']['cls'], \
-        #                                                                       shot_dict_cls['median']['cls'], shot_dict_cls['low']['cls'])+ "\n" )
-        #
-        f.write(' G-mean Gt {}, Many :  G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_gt, shot_dict_gt['many']['gmean'],
-                                                                         shot_dict_gt['median']['gmean'], shot_dict_gt['low']['gmean'])+ "\n")                                                       
-        #
-        f.write(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_dict_pred['many']['gmean'],
-                                                                         shot_dict_pred['median']['gmean'], shot_dict_pred['low']['gmean'])+ "\n")     
+        f.write(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
+                                                                         shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
         f.write('---------------------------------------------------------------------\n')
         f.close()
 
@@ -261,25 +246,12 @@ if __name__ == '__main__':
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
     #
-    best_bMAE = 100
+    opts = [opt_model, opt_mi] 
     #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(model, train_loader,
-                                loss_ce, loss_mse, opt, args, cls_num_list)
-        
-
+        model = train_one_epoch(args, model, train_loader, mi_estimator, opts)
 
     # test final model
-    acc_g_avg, acc_mae_gt_avg, acc_mae_pred_avg, shot_pred, shot_pred_gt, gmean_gt, gmean_pred = test(
-        model, test_loader, train_labels, args)
-    results = [acc_g_avg, acc_mae_gt_avg, acc_mae_pred_avg, gmean_gt, gmean_pred]
-    write_log('./output/'+store_name, results, shot_pred, shot_pred_gt, args)
-    if args.ranked_contra:
-        file_name = args.output_file + 'contra.txt'
-        write_log(file_name, results, shot_pred, shot_pred_gt, args, current_task_name=store_names, mode = 'test')
-    else:
-        file_name = args.output_file + 'no_contra.txt'
-        write_log(file_name, results, shot_pred, shot_pred_gt,
-                  args, current_task_name=store_names, mode='test')
-
-
+    mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
+    write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
+    # 
