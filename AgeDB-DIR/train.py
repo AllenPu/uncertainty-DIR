@@ -32,7 +32,7 @@ parser.add_argument('--seed', default=3407)
 parser.add_argument('--dataset', type=str, default='agedb',
                     choices=['imdb_wiki', 'agedb'], help='dataset name')
 parser.add_argument('--data_dir', type=str,
-                    default='/home/ruizhipu/scratch/regression/imbalanced-regression/agedb-dir/data', help='data directory')
+                    default='/home/rpu2/scratch/data/imbalanced-regression/agedb-dir/data', help='data directory')
 parser.add_argument('--model', type=str, default='resnet50', help='model name')
 parser.add_argument('--store_root', type=str, default='checkpoint',
                     help='root path for storing checkpoints, logs')
