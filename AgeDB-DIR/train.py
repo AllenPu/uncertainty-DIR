@@ -239,7 +239,7 @@ if __name__ == '__main__':
     #
     feature_dim = model.feature_dim
     #
-    mi_estimator = KNIFE(args, feature_dim)
+    mi_estimator = KNIFE(args, feature_dim).to(device)
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
