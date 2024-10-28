@@ -50,6 +50,7 @@ def variance_calculation(model, train_loader):
     gt_data, uncertain_data, pred_data = \
         gt_data.reshape(gt_data.shape[0], 1), uncertain_data.reshape(uncertain_data.shape[0], 1), pred_data.reshape(pred_data.shape[0], 1)
     datas = np.concatenate((gt_data, uncertain_data, pred_data),axis=1) 
+    # ground truth label, prediction label, and prediction variance label
     plt.hist(datas, bins=len(gt_list),edgecolor = 'w',color = ['c','r', 'b'],  label = ['gt','pred','pred_var'], stacked = False)
     ax = plt.gca() 
     plt.legend()
