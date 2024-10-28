@@ -3,6 +3,7 @@ import torchvision
 import torch
 import torch.optim as optim
 from model import *
+import numpy as np
 
 
 class ResNet_regression(nn.Module):
