@@ -147,4 +147,4 @@ class GaussianLikelihoodHead(nn.Module):
         var = F.softplus(var + self.init_var_offset) + self.min_var
         var = torch.clamp(var, self.min_var, self.max_var)
 
-        return mean, var
+        return [mean, var]
