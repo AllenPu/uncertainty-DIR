@@ -135,7 +135,6 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
     for idx, (x, y) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
-        opt.zero_grad()
         x, y  = x.to(device), y.to(device)
         #
         z, y_pred, var_pred = model(x)
