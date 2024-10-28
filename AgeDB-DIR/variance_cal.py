@@ -22,9 +22,10 @@ def count_down(labels, y_gt, y_pred, y_uncertain):
 
 
 # the prediction variance of the training
+# input of the model and train/test loader
 def variance_calculation(model, train_loader):
     y_gt, y_pred, y_uncertain = [], [], []
-    for idx, (x, y, g) in enumerate(train_loader):
+    for idx, (x, y) in enumerate(train_loader):
         with torch.no_grad():
             x, y = x.cuda(non_blocking=True), y.cuda(non_blocking=True)
             pred, uncertain = model(x)
