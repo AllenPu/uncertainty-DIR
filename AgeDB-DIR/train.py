@@ -235,7 +235,7 @@ if __name__ == '__main__':
     #
     loss_mse = nn.MSELoss()
     #
-    model = Guassian_uncertain_ResNet()
+    model = Guassian_uncertain_ResNet().to(device)
     #
     feature_dim = model.feature_dim
     #
