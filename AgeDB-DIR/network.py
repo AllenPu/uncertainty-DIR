@@ -98,10 +98,10 @@ class Guassian_uncertain_ResNet(nn.Module):
         feat = self.encoder(x)
         if self.norm:
             feat = F.normalize(feat, dim=-1)
-        out = self.guassian_head(feat)
-        out_ = torch.chunk(out,2,dim=1)
+        mean, var = self.guassian_head(feat)
+    
         # feature, mean, variance
-        return feat, out_[0], out_[1]
+        return feat, mean ,var
     
 
 
@@ -147,4 +147,5 @@ class GaussianLikelihoodHead(nn.Module):
         var = F.softplus(var + self.init_var_offset) + self.min_var
         var = torch.clamp(var, self.min_var, self.max_var)
 
-        return [mean, var]
+
+        return mean, var
