@@ -42,7 +42,7 @@ def reverse_ent_to_var(ent):
 class KNIFE(nn.Module):
     def __init__(self, args, zc_dim):
         super(KNIFE, self).__init__()
-        self.kernel_marg = MargKernel(args, zc_dim)
+        self.kernel_marg = MargKernel(args.batch_size, zc_dim)
 
     def forward(self, z_c):  # samples have shape [sample_size, dim]
         marg_ent = self.kernel_marg(z_c)
