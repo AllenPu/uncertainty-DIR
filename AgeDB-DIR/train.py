@@ -149,8 +149,12 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         feature_mi = mi_estimator(z)
         var, nll_loss = beta_nll_loss(y_pred, y, feature_mi)
         variance_loss = F.mse_loss(var_pred, var)
-        #
         loss = nll_loss + variance_loss
+        #print(' mi ', feature_mi[:10])
+        print(' nll ', nll_loss)
+        #print(' var ', var[:10], ' var pred ', var_pred[:10])
+        print(' variance loss ', variance_loss)
+        print('total loss', loss)
         opt_model.zero_grad()
         loss.backward()
         opt_model.step()

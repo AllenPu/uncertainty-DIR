@@ -41,7 +41,7 @@ def reverse_ent_to_var(ent, feature_dim=64):
     #logvar = torch.clamp(ent, 1e-8)
     #logvar = torch.clamp(ent - log_const, 1e-8)
     print(' ent ', ent[:10]) 
-    print(' log var ', var[:10])
+    print(' var ', var[:10])
     #var = torch.exp(logvar)
     return var
 
