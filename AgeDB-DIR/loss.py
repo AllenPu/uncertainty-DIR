@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 
-def beta_nll_loss(mean, ent, target, beta=0.5):
+def beta_nll_loss(mean, target, ent, beta=0.5):
     """Compute beta-NLL loss
     
     :param mean: Predicted mean of shape B x D
@@ -19,7 +19,6 @@ def beta_nll_loss(mean, ent, target, beta=0.5):
     #
     variance = reverse_ent_to_var(ent)
     #
-
     loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
 
     if beta > 0:
