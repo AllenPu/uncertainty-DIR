@@ -85,12 +85,17 @@ class Guassian_uncertain_ResNet(nn.Module):
         self.encoder = backbone()
         self.norm = norm
         self.weight_norm = weight_norm
+        #
+        self.feature_rescale = nn.Linear(dim_in, 64)
+        '''
         if self.weight_norm:
             self.regressor = torch.nn.utils.weight_norm(nn.Linear(dim_in, 2), name='weight')
         else:
            self.regressor = nn.Linear(dim_in, 2)
-        self.guassian_head = GaussianLikelihoodHead(inp_dim=dim_in, outp_dim=1)
-        self.feature_dim = dim_in        
+        '''
+        self.guassian_head = GaussianLikelihoodHead(inp_dim=64, outp_dim=1)
+        #
+        self.feature_dim = 64        
 
 
 
@@ -98,6 +103,7 @@ class Guassian_uncertain_ResNet(nn.Module):
         feat = self.encoder(x)
         if self.norm:
             feat = F.normalize(feat, dim=-1)
+        feat = self.feature_rescale(feat)
         mean, var = self.guassian_head(feat)
     
         # feature, mean, variance

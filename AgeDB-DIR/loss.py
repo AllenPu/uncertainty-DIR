@@ -98,7 +98,7 @@ class MargKernel(nn.Module):
         #tri_size = torch.tril(self.tri, diagonal=-1).size()
         #y_size = y[:, :, :, None].size()
         #print(f' the size of the tri is {tri_size} y size is {y_size}')
-        c = torch.matmul(torch.tril(self.tri, diagonal=-1), y[:, :, :, None])
+        #
         y = y + torch.squeeze(torch.matmul(torch.tril(self.tri, diagonal=-1), y[:, :, :, None]), 3)
         #
         y = torch.sum(y ** 2, dim=2)
