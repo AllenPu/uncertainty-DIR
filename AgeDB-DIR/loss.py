@@ -36,13 +36,7 @@ def reverse_ent_to_var(ent, feature_dim=64):
     log_const = log_const.cuda()
     log_const = log_const.repeat(ent.shape[0], 1)
     biased_logvar = ent_rescale - log_const
-    print(' biase var ', biased_logvar[:10])
     var = torch.exp(biased_logvar)
-    #logvar = torch.clamp(ent, 1e-8)
-    #logvar = torch.clamp(ent - log_const, 1e-8)
-    print(' ent ', ent[:10]) 
-    print(' var ', var[:10])
-    #var = torch.exp(logvar)
     return var
 
 
