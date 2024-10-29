@@ -224,14 +224,8 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
 if __name__ == '__main__':
     args = parser.parse_args()
     setup_seed(args.seed)
-    store_names = ''
-    ####
-    if args.soft_label:
-        store_names = 'soft_label_' + 'ce_' + str(args.ce) +store_names
+    store_name = ''
     #
-    print(" store name is ", store_names)
-    #
-    store_name = store_names + '.txt'
     #
     train_loader, test_loader, val_loader,  train_labels = get_data_loader(
         args)
@@ -254,7 +248,6 @@ if __name__ == '__main__':
 
     # test final model
     mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
-    write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     # 
     print('=---------------------------------------------------------------------=\n')
     print(f' store name is {store_name}')
@@ -265,3 +258,5 @@ if __name__ == '__main__':
     print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
     print('---------------------------------------------------------------------\n')
+    #
+    write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
