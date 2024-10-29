@@ -143,7 +143,7 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         mi = torch.sum(mi)
         #
         opt_mi.zero_grad()
-        mi.backward()
+        mi.backward(retain_graph=True)
         opt_mi.step()
         #
         feature_mi = mi_estimator(z)
