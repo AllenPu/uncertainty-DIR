@@ -140,6 +140,7 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         z, y_pred, var_pred = model(x)
         #
         mi = torch.sum(mi_estimator.learning_loss(z))
+        print('before  update', mi[:10])
         #
         opt_mi.zero_grad()
         mi.backward()
@@ -150,8 +151,8 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         variance_loss = F.mse_loss(var_pred, var)
         loss = nll_loss + variance_loss
         #print(' mi ', feature_mi[:10])
-        print(' nll ', nll_loss)
-        print(' var ', var[:10], ' var pred ', var_pred[:10])
+        #print(' nll ', nll_loss)
+        #print(' var ', var[:10], ' var pred ', var_pred[:10])
         #print(' var ', variance_loss.dtype)
         #print('total loss', loss.dtype)
         opt_model.zero_grad()
