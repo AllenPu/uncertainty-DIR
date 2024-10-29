@@ -29,20 +29,20 @@ def beta_nll_loss(mean, target, ent, beta=0.5):
 
 
 
-def reverse_ent_to_var(ent):
-    #ent_const = torch.ones(ent.shape)*64
-    #ent = torch.abs(2*(ent - ent_const.cuda()))
+def reverse_ent_to_var(ent, feature_dim=64):
+    # log_var = 2h/d - log(2e*pi)
+    ent_rescale = 2*ent/feature_dim
     log_const = torch.Tensor([np.log(2*np.pi) + 1]).unsqueeze(-1)
     log_const = log_const.cuda()
     log_const = log_const.repeat(ent.shape[0], 1)
-    biased_logvar = ent - log_const
+    biased_logvar = ent_rescale - log_const
     print(' biase var ', biased_logvar[:10])
-    logvar = torch.clamp(ent, 1e-8)
+    var = torch.exp(biased_logvar)
+    #logvar = torch.clamp(ent, 1e-8)
     #logvar = torch.clamp(ent - log_const, 1e-8)
     print(' ent ', ent[:10]) 
-    print(' log var ', logvar[:10])
+    print(' log var ', var[:10])
     #var = torch.exp(logvar)
-    var = torch.exp(biased_logvar)
     return var
 
 
