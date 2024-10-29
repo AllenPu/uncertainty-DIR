@@ -139,8 +139,9 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        mi = torch.sum(mi_estimator.learning_loss(z))
+        mi = mi_estimator.learning_loss(z)
         print('before  update', mi[:10])
+        mi = torch.sum(mi)
         #
         opt_mi.zero_grad()
         mi.backward()
