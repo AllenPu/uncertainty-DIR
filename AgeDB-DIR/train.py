@@ -170,7 +170,7 @@ def test(model, test_loader, train_labels, args):
     mae_pred = AverageMeter()
     # gmean
     criterion_gmean_pred = nn.L1Loss(reduction='none')
-    gmean_loss_all_pred = [], [] 
+    gmean_loss_all_pred = []
     #
     pred, labels = [], []
     #
