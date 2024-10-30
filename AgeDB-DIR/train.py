@@ -263,4 +263,4 @@ if __name__ == '__main__':
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
     print('---------------------------------------------------------------------\n')
     #
-    write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
+    #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
