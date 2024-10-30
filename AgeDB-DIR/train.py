@@ -175,7 +175,7 @@ def test(model, test_loader, train_labels, args):
     pred, labels = [], []
     #
     with torch.no_grad():
-        for idx, (x, y, g) in enumerate(test_loader):
+        for idx, (x, y) in enumerate(test_loader):
             bsz = x.shape[0]
             x, y= x.to(device), y.to(device)
             #
