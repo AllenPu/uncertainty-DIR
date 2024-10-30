@@ -172,7 +172,7 @@ def test(model, test_loader, train_labels, args):
     criterion_gmean_pred = nn.L1Loss(reduction='none')
     gmean_loss_all_pred = [], [] 
     #
-    pred, labels = []
+    pred, labels = [], []
     #
     with torch.no_grad():
         for idx, (x, y, g) in enumerate(test_loader):
