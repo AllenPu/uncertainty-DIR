@@ -249,18 +249,18 @@ if __name__ == '__main__':
     #
     for e in tqdm(range(args.epoch)):
         model = train_one_epoch(args, model, train_loader, mi_estimator, opts)
-
+        if e%10 == 0:
     # test final model
-    mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
+            mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
     # 
-    print('=---------------------------------------------------------------------=\n')
-    print(f' store name is {store_name}')
+            print('=---------------------------------------------------------------------=\n')
+            print(f' store name is {store_name}')
         #
-    print(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
+            print(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
                                                                              shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
         #
-    print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
+            print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
-    print('---------------------------------------------------------------------\n')
+            print('---------------------------------------------------------------------\n')
     #
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
