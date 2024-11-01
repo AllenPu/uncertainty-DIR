@@ -92,6 +92,9 @@ parser.add_argument('--scale', type=float, default=1, help='scale of the sharpne
 #parser.add_argument('--diversity', type=float, default=0, help='scale of the diversity loss in regressor output')
 parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the diversity loss in z')
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
+parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
+parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -236,7 +239,7 @@ if __name__ == '__main__':
     #
     loss_mse = nn.MSELoss()
     #
-    model = Guassian_uncertain_ResNet().to(device)
+    model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
     feature_dim = model.feature_dim
     #
