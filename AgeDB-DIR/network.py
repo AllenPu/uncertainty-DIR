@@ -93,9 +93,9 @@ class Guassian_uncertain_ResNet(nn.Module):
         else:
            self.regressor = nn.Linear(dim_in, 2)
         '''
-        self.guassian_head = GaussianLikelihoodHead(inp_dim=64, outp_dim=1)
+        self.guassian_head = GaussianLikelihoodHead(inp_dim=64, outp_dim=1, use_spectral_norm_mean=weight_norm)
         #
-        self.feature_dim = 64        
+        self.feature_dim = 64       
 
 
 
