@@ -94,8 +94,8 @@ parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the dive
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
-
-
+#
+#
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
