@@ -1,0 +1,3 @@
+# try beta == 0
+# each label variance: is majority larger than the med or low
+# rescale variance
