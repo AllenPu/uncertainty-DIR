@@ -43,7 +43,7 @@ parser.add_argument('--optimizer', type=str, default='adam',
                     choices=['adam', 'sgd'], help='optimizer type')
 parser.add_argument('--loss', type=str, default='l1', choices=[
                     'mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
-parser.add_argument('--lr', type=float, default=1e-4,
+parser.add_argument('--lr', type=float, default=1e-5,
                     help='initial learning rate')
 parser.add_argument('--epoch', type=int, default=100,
                     help='number of epochs to train')
