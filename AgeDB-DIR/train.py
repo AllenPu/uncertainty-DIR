@@ -150,7 +150,7 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         opt_mi.step()
         #
         feature_mi = mi_estimator(z)
-        var, nll_loss = beta_nll_loss(y_pred, y, feature_mi)
+        var, nll_loss = beta_nll_loss(y_pred, y, feature_mi, 0)
         variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss + variance_loss
         loss = loss.to(torch.float)
