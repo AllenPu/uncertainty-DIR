@@ -155,9 +155,9 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         loss = nll_loss + variance_loss
         loss = loss.to(torch.float)
         #print(' mi ', feature_mi[:10])
-        #print(' nll ', nll_loss)
-        #print(' var ', var[:10], ' var pred ', var_pred[:10])
-        #print(' variance loss ', variance_loss, ' var pred dtype ', var_pred.dtype, ' var ', var.dtype)
+        print(' nll ', nll_loss)
+        print(' var ', var[:10], ' var pred ', var_pred[:10])
+        print(' variance loss ', variance_loss)
         #print('total loss', loss)
         opt_model.zero_grad()
         loss.backward()
