@@ -156,7 +156,7 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         loss = loss.to(torch.float)
         #print(' mi ', feature_mi[:10])
         print(' nll ', nll_loss)
-        print(' var ', var[:10], ' var pred ', var_pred[:10])
+        print(' var ', var[:10], ' y ', y[:10])
         print(' variance loss ', variance_loss)
         assert 1 == 2
         #print('total loss', loss)
