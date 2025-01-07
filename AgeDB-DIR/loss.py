@@ -125,5 +125,9 @@ class MargKernel(nn.Module):
 
 
 def Renyi_alpha(z, alpha=2):
+    # num, dea_dim
     norm_z = torch.nn.functional.normalize(z)
-    
+    # num, 1
+    renyi_ent = (1/1-alpha)*torch.log(torch.sum(torch.pow(norm_z, alpha), dim=1).unsqueeze(-1))
+    #
+    return renyi_ent
