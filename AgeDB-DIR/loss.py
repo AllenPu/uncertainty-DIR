@@ -123,7 +123,7 @@ class MargKernel(nn.Module):
         # return a (bs, 1)
 
 
-
+# (1/1-alpha)*(log \sum z_I^{alpha})
 def Renyi_alpha(z, alpha=2):
     # num, dea_dim
     norm_z = torch.nn.functional.normalize(z)
