@@ -121,3 +121,9 @@ class MargKernel(nn.Module):
         #return torch.mean(y)
         return y.unsqueeze(-1)
         # return a (bs, 1)
+
+
+
+def Renyi_alpha(z, alpha=2):
+    norm_z = torch.nn.functional.normalize(z)
+    
