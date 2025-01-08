@@ -126,6 +126,7 @@ class MargKernel(nn.Module):
 # (1/1-alpha)*(log \sum z_I^{alpha})
 def Renyi_alpha(z, alpha=2):
     # num, dea_dim
+    # do we need norm?
     norm_z = torch.nn.functional.softmax(z, dim=-1)
     # num, 1
     renyi_ent = (1/1-alpha)*torch.log(torch.sum(torch.pow(norm_z, alpha), dim=1).unsqueeze(-1))
