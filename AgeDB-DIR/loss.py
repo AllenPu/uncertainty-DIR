@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import torch.nn as nn
+from FF import *
 
 
 
@@ -122,6 +123,56 @@ class MargKernel(nn.Module):
         #return torch.mean(y)
         return y.unsqueeze(-1)
         # return a (bs, 1)
+
+class CondKernel(nn.Module):
+    """
+    Used to compute p(z_d | z_c)
+    """
+
+    def __init__(self, args, zc_dim, zd_dim, layers=1):
+        super(CondKernel, self).__init__()
+        self.K, self.d = args.cond_modes, zd_dim
+        self.use_tanh = args.use_tanh
+        self.logC = torch.tensor([-self.d / 2 * np.log(2 * np.pi)])
+
+        self.mu = FF(args, zc_dim, self.d, self.K * zd_dim)
+        self.logvar = FF(args, zc_dim, self.d, self.K * zd_dim)
+
+        self.weight = FF(args, zc_dim, self.d, self.K)
+        self.tri = None
+        if args.cov_off_diagonal == 'var':
+            self.tri = FF(args, zc_dim, self.d, self.K * zd_dim ** 2)
+        self.zc_dim = zc_dim
+
+    def logpdf(self, z_c, z_d):  # H(z_d|z_c)
+
+        z_d = z_d[:, None, :]  # [N, 1, d]
+
+        w = torch.log_softmax(self.weight(z_c), dim=-1)  # [N, K]
+        mu = self.mu(z_c)
+        logvar = self.logvar(z_c)
+        if self.use_tanh:
+            logvar = logvar.tanh()
+        var = logvar.exp().reshape(-1, self.K, self.d)
+        mu = mu.reshape(-1, self.K, self.d)
+        # print(f"Cond : {var.min()} | {var.max()} | {var.mean()}")
+
+        z = z_d - mu  # [N, K, d]
+        z = var * z
+        if self.tri is not None:
+            tri = self.tri(z_c).reshape(-1, self.K, self.d, self.d)
+            z = z + torch.squeeze(torch.matmul(torch.tril(tri, diagonal=-1), z[:, :, :, None]), 3)
+        z = torch.sum(z ** 2, dim=-1)  # [N, K]
+
+        z = -z / 2 + torch.log(torch.abs(var) + 1e-8).sum(-1) + w
+        z = torch.logsumexp(z, dim=-1)
+        return self.logC.to(z.device) + z
+
+    def forward(self, z_c, z_d):
+        z = -self.logpdf(z_c, z_d)
+        return torch.mean(z)
+    
+
 
 
 # (1/1-alpha)*(log \sum z_I^{alpha})
