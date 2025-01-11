@@ -49,6 +49,7 @@ class KNIFE(nn.Module):
 
     def forward(self, z_c):  # samples have shape [sample_size, dim]
         marg_ent = self.kernel_marg(z_c)
+        condition_ent = self.kernel_marg(z_c)
         return marg_ent
 
     def learning_loss(self, z_c):
