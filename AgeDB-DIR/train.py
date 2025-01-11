@@ -268,3 +268,10 @@ if __name__ == '__main__':
             print('---------------------------------------------------------------------\n')
     #
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
+
+
+################
+#
+# draw the beta-NLL variance with different variance
+#
+################
