@@ -130,10 +130,10 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, train_labels
 
 
-def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
+def train_one_epoch(args, model, train_loader,  opts):
     model.train()
     #
-    opt_model, opt_mi = opts
+    opt_model = opts
     #
     for idx, (x, y) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -142,17 +142,18 @@ def train_one_epoch(args, model, train_loader,  mi_estimator, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        mi = mi_estimator.learning_loss(z)
-        mi = torch.sum(mi)
+        #mi = mi_estimator.learning_loss(z)
+        #mi = torch.sum(mi)
+        #opt_mi.zero_grad()
+        #mi.backward(retain_graph=True)
+        #opt_mi.step()
         #
-        opt_mi.zero_grad()
-        mi.backward(retain_graph=True)
-        opt_mi.step()
+        ##feature_mi = mi_estimator(z)
+        #var_pred = reverse_ent_to_var(feature_mi)
         #
-        feature_mi = mi_estimator(z)
-        var, nll_loss = beta_nll_loss(y_pred, y, feature_mi, 0)
-        variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss + variance_loss
+        var, nll_loss = beta_nll_loss(y_pred, var_pred, y, 0)
+        #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
+        loss = nll_loss #+ variance_loss
         loss = loss.to(torch.float)
         #print(' mi ', feature_mi[:10])
         #print(' nll ', nll_loss)
@@ -244,15 +245,15 @@ if __name__ == '__main__':
     #
     feature_dim = model.feature_dim
     #
-    mi_estimator = KNIFE(args, feature_dim).to(device)
+    #mi_estimator = KNIFE(args, feature_dim).to(device)
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
-    opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
+    #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
     #
-    opts = [opt_model, opt_mi] 
+    opts = [opt_model]#, opt_mi] 
     #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(args, model, train_loader, mi_estimator, opts)
+        model = train_one_epoch(args, model, train_loader, opts)
         if e%10 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)

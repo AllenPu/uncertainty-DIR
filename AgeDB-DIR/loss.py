@@ -5,7 +5,7 @@ from FF import *
 
 
 
-def beta_nll_loss(mean, target, ent, beta=0.5):
+def beta_nll_loss(mean, variance, target, beta=0.5):
     """Compute beta-NLL loss
     
     :param mean: Predicted mean of shape B x D
@@ -18,7 +18,7 @@ def beta_nll_loss(mean, target, ent, beta=0.5):
     :returns: Loss per batch element of shape B
     """
     #
-    variance = reverse_ent_to_var(ent)
+    #variance = reverse_ent_to_var(ent)
     #
     loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
     #print('loss before', loss[:10])
