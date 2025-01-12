@@ -148,9 +148,7 @@ def train_one_epoch(args, model, train_loader, opts):
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss #+ variance_loss
         loss = loss.to(torch.float)
-        #print(' variance loss ', variance_loss)
-        #assert 1 == 2
-        #print('total loss', loss)
+        #
         opt_model.zero_grad()
         loss.backward()
         opt_model.step()
