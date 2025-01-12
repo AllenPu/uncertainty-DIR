@@ -145,7 +145,7 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
-        uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(var_pred, y, maj, med, low)
+        uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(var_pred, y, maj, med, low, device)
         #
         print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
