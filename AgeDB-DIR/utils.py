@@ -575,10 +575,10 @@ def test_group_acc(model, train_loader, prefix, args):
 # var, prediction variances
 # label, ground truth target labels
 # maj, med, low labels
-def uncertainty_accumulation(var, label, maj, med, low):
-    maj_indice =  torch.nonzero(torch.isin(label, torch.Tensor(maj)), as_tuple=False)
-    med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med)), as_tuple=False)
-    low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low)), as_tuple=False)
+def uncertainty_accumulation(var, label, maj, med, low, device):
+    maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
+    med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
+    low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)
     maj_var = torch.mean(var[maj_indice].squeeze(-1).to(torch.float))
     med_var = torch.mean(var[med_indice].squeeze(-1).to(torch.float))
     low_var = torch.mean(var[low_indice].squeeze(-1).to(torch.float))
