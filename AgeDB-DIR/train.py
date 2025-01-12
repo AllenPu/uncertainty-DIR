@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced 
+from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation
 import torch
 from loss import *
 from network import *
@@ -130,7 +130,7 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, train_labels
 
 
-def train_one_epoch(args, model, train_loader,  opts):
+def train_one_epoch(args, model, train_loader, opts):
     model.train()
     #
     opt_model = opts
@@ -151,7 +151,9 @@ def train_one_epoch(args, model, train_loader,  opts):
         ##feature_mi = mi_estimator(z)
         #var_pred = reverse_ent_to_var(feature_mi)
         #
-        var, nll_loss = beta_nll_loss(y_pred, var_pred, y, 0)
+        nll_loss = beta_nll_loss(y_pred, var_pred, y, 0)
+        #
+        uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(var_pred, y, maj, med, low)
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss #+ variance_loss
         loss = loss.to(torch.float)
