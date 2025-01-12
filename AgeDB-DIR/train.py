@@ -209,13 +209,6 @@ def test(model, test_loader, train_labels, args):
 
 
 
-# var, prediction variances
-# label, ground truth target labels
-# maj, med, low labels
-def uncertainty_accumulation(var, label, maj, med, low):
-    
-
-
 ######################
 # write log for the test
 #####################

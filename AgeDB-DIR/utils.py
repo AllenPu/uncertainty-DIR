@@ -567,3 +567,20 @@ def test_group_acc(model, train_loader, prefix, args):
     labels = np.array(labels)
     np.save(f'./acc/pred{prefix}.npy', pred)
     np.save(f'./acc/labels{prefix}.npy', labels)
+
+
+
+
+# in a mini-batch, calculate the variance in each shot and total
+# var, prediction variances
+# label, ground truth target labels
+# maj, med, low labels
+def uncertainty_accumulation(var, label, maj, med, low):
+    maj_indice =  torch.nonzero(torch.isin(label, torch.Tensor(maj)), as_tuple=False)
+    med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med)), as_tuple=False)
+    low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low)), as_tuple=False)
+    maj_var = torch.mean(var[maj_indice].squeeze(-1).to(torch.float))
+    med_var = torch.mean(var[med_indice].squeeze(-1).to(torch.float))
+    low_var = torch.mean(var[low_indice].squeeze(-1).to(torch.float))
+    total_var = torch.mean(var.squeeze(-1).to(torch.float))
+    return maj_var.item(), med_var.item(), low_var.item(), total_var.item()
