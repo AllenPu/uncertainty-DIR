@@ -165,7 +165,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     print(f' nll loss is {nll_loss}')
-    print(f' MSe is {}')
+    print(f' MSe is {mse}')
 
     return model
 
