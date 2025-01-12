@@ -209,6 +209,12 @@ def test(model, test_loader, train_labels, args):
 
 
 
+# var, prediction variances
+# label, ground truth target labels
+# maj, med, low labels
+def uncertainty_accumulation(var, label, maj, med, low):
+    
+
 
 ######################
 # write log for the test
@@ -232,10 +238,11 @@ if __name__ == '__main__':
     setup_seed(args.seed)
     store_name = ''
     #
-    #
     train_loader, test_loader, val_loader,  train_labels = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
+    #
+    maj, med, low = shot_count(train_labels)
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
