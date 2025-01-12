@@ -142,15 +142,6 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        #mi = mi_estimator.learning_loss(z)
-        #mi = torch.sum(mi)
-        #opt_mi.zero_grad()
-        #mi.backward(retain_graph=True)
-        #opt_mi.step()
-        #
-        ##feature_mi = mi_estimator(z)
-        #var_pred = reverse_ent_to_var(feature_mi)
-        #
         nll_loss = beta_nll_loss(y_pred, var_pred, y, 0)
         #
         uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(var_pred, y, maj, med, low)
