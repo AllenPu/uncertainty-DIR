@@ -94,6 +94,7 @@ parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the dive
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
+parser.add_aurgument('--beta', default=0.5, type=float,  help='beta for nll')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -142,7 +143,7 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        nll_loss = beta_nll_loss(y_pred, var_pred, y, 0)
+        nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
         uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(var_pred, y, maj, med, low)
         #
