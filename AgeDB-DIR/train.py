@@ -240,7 +240,7 @@ if __name__ == '__main__':
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
-    feature_dim = model.feature_dim
+    #feature_dim = model.feature_dim
     #
     #mi_estimator = KNIFE(args, feature_dim).to(device)
     #
@@ -254,7 +254,7 @@ if __name__ == '__main__':
         if e%10 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
-    # 
+    #
             print('=---------------------------------------------------------------------=\n')
             print(f' store name is {store_name}')
         #
