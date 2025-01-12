@@ -233,8 +233,7 @@ if __name__ == '__main__':
     store_name = ''
     #
     #
-    train_loader, test_loader, val_loader,  train_labels = get_data_loader(
-        args)
+    train_loader, test_loader, val_loader,  train_labels = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
     #
