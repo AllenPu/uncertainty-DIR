@@ -265,7 +265,7 @@ if __name__ == '__main__':
     for e in tqdm(range(args.epoch)):
         model, results = train_one_epoch(args, model, train_loader, opts)
         #
-        with open(output_file, "w") as file:
+        with open(output_file, "a+") as file:
             file.write(" ".join(results))
             file.close()
         #
