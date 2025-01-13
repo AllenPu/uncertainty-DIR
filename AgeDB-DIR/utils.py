@@ -584,3 +584,19 @@ def uncertainty_accumulation(var, label, maj, med, low, device):
     low_var = torch.mean(var[low_indice].squeeze(-1).to(torch.float))
     total_var = torch.mean(var.squeeze(-1).to(torch.float))
     return maj_var.item(), med_var.item(), low_var.item(), total_var.item()
+
+
+
+# in a mini-batch, calculate the prediction variance from predicted values in each shot and total
+# pred, target lable prediction 
+# label, ground truth target labels
+# maj, med, low labels
+def uncertainty_accumulation(pred, label, maj, med, low, device):
+    maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
+    med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
+    low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)
+    maj_var = torch.var(pred[maj_indice].squeeze(-1).to(torch.float))
+    med_var = torch.var(pred[med_indice].squeeze(-1).to(torch.float))
+    low_var = torch.var(pred[low_indice].squeeze(-1).to(torch.float))
+    #
+    return maj_var.item(), med_var.item(), low_var.item()
