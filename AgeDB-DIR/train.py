@@ -161,9 +161,9 @@ def train_one_epoch(args, model, train_loader, opts):
         label_list.append(y)
         pred_list.append(y_pred)
     #
-    vars, labels  = torch.cat(var_list, 0), torch.cat(label_list, 0)
+    vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.beta == 0:
-        uncer_maj, uncer_med, uncer_low = label_uncertainty_accumulation(pred_list, labels, maj, med, low, device)
+        uncer_maj, uncer_med, uncer_low = label_uncertainty_accumulation(preds, labels, maj, med, low, device)
         uncer_total  = 0
     else:
         uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
