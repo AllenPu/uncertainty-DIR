@@ -591,7 +591,7 @@ def uncertainty_accumulation(var, label, maj, med, low, device):
 # pred, target lable prediction 
 # label, ground truth target labels
 # maj, med, low labels
-def uncertainty_accumulation(pred, label, maj, med, low, device):
+def label_uncertainty_accumulation(pred, label, maj, med, low, device):
     maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
     med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
     low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)

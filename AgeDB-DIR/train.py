@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation
+from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation
 import torch
 from loss import *
 from network import *
@@ -136,7 +136,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     [opt_model] = opts
     #
-    var_list, label_list = [], []
+    var_list, label_list, pred_list = [], [], []
     #
     for idx, (x, y) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -159,9 +159,14 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         var_list.append(var_pred)
         label_list.append(y)
+        pred_list.append(y_pred)
     #
     vars, labels  = torch.cat(var_list, 0), torch.cat(label_list, 0)
-    uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
+    if args.beta == 0:
+        uncer_maj, uncer_med, uncer_low = label_uncertainty_accumulation(pred_list, labels, maj, med, low, device)
+        uncer_total  = 0
+    else:
+        uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
     #
     results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss), str(mse)]
     #
