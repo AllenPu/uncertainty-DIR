@@ -267,7 +267,7 @@ if __name__ == '__main__':
         #
         with open(output_file, "a+") as file:
             file.write("Epoch "+str(e)+" ")
-            file.write(" ".join(results))
+            file.write(" ".join(results) + '\n')
             file.close()
         #
         
