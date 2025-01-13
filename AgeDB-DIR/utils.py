@@ -595,6 +595,7 @@ def label_uncertainty_accumulation(pred, label, maj, med, low, device):
     maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
     med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
     low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)
+    print(' the shape is ', pred[maj_indice].shape)
     maj_var = torch.var(pred[maj_indice].squeeze(-1).to(torch.float))
     med_var = torch.var(pred[med_indice].squeeze(-1).to(torch.float))
     low_var = torch.var(pred[low_indice].squeeze(-1).to(torch.float))
