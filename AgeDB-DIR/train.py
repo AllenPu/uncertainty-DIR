@@ -163,11 +163,13 @@ def train_one_epoch(args, model, train_loader, opts):
     vars, labels  = torch.cat(var_list, 0), torch.cat(label_list, 0)
     uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
     #
-    print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
-    print(f' nll loss is {nll_loss}')
-    print(f' MSe is {mse}')
+    results = [uncer_maj, uncer_med, uncer_low, uncer_total, nll_loss, mse]
+    #
+    #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
+    #print(f' nll loss is {nll_loss}')
+    #print(f' MSe is {mse}')
 
-    return model
+    return model, results
 
 
 def test(model, test_loader, train_labels, args):
@@ -253,8 +255,15 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
+    output_file = 'var_' + 'beta_' + str(args.beta)
+    #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(args, model, train_loader, opts)
+        model, results = train_one_epoch(args, model, train_loader, opts)
+        #
+        with open(output_file, "w") as file:
+            file.write(" ".join(results))
+            file.close()
+        #
         if e%10 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
