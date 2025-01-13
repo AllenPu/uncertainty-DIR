@@ -266,7 +266,7 @@ if __name__ == '__main__':
         model, results = train_one_epoch(args, model, train_loader, opts)
         #
         with open(output_file, "a+") as file:
-            file.write("Epoch "+e+" ")
+            file.write("Epoch "+str(e)+" ")
             file.write(" ".join(results))
             file.close()
         #
