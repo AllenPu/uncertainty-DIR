@@ -164,11 +164,11 @@ def train_one_epoch(args, model, train_loader, opts):
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.beta == 0:
         uncer_maj, uncer_med, uncer_low = label_uncertainty_accumulation(preds, labels, maj, med, low, device)
-        uncer_total  = 0
+        uncer_total  = torch.Tensor([0])
     else:
         uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
     #
-    results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss), str(mse)]
+    results = [str(uncer_maj.item()), str(uncer_med.item()), str(uncer_low.item()), str(uncer_total.item()), str(nll_loss.item()), str(mse.item())]
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     #print(f' nll loss is {nll_loss}')
@@ -266,7 +266,7 @@ if __name__ == '__main__':
         model, results = train_one_epoch(args, model, train_loader, opts)
         #
         with open(output_file, "a+") as file:
-            file.write("Epoch "+str(e)+" ")
+            file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             file.close()
         #
