@@ -264,6 +264,7 @@ if __name__ == '__main__':
             file.write(" ".join(results))
             file.close()
         #
+        '''
         if e%10 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
@@ -279,7 +280,7 @@ if __name__ == '__main__':
             print('---------------------------------------------------------------------\n')
     #
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
-
+    '''
 
 ################
 #
