@@ -45,7 +45,7 @@ parser.add_argument('--loss', type=str, default='l1', choices=[
                     'mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
 parser.add_argument('--lr', type=float, default=5e-5,
                     help='initial learning rate')
-parser.add_argument('--epoch', type=int, default=100,
+parser.add_argument('--epoch', type=int, default=200,
                     help='number of epochs to train')
 parser.add_argument('--momentum', type=float, default=0.9,
                     help='optimizer momentum')
@@ -255,7 +255,7 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    output_file = 'var_' + 'beta_' + str(args.beta)
+    output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
         model, results = train_one_epoch(args, model, train_loader, opts)
