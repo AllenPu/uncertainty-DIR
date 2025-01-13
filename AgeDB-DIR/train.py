@@ -168,14 +168,8 @@ def train_one_epoch(args, model, train_loader, opts):
     else:
         uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
     #
-    #results = [str(uncer_maj.item()), str(uncer_med.item()), str(uncer_low.item()), str(uncer_total.item()), str(nll_loss.item()), str(mse.item())]
-    print(uncer_maj.item())
-    print(uncer_med.item())
-    print(uncer_low.item())
-    print(uncer_total.item())
-    print(nll_loss.item())
-    print(mse.item())
-    
+    results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
+
 
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
