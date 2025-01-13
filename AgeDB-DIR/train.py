@@ -163,7 +163,7 @@ def train_one_epoch(args, model, train_loader, opts):
     vars, labels  = torch.cat(var_list, 0), torch.cat(label_list, 0)
     uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
     #
-    results = [uncer_maj, uncer_med, uncer_low, uncer_total, nll_loss, mse]
+    results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss), str(mse)]
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     #print(f' nll loss is {nll_loss}')
