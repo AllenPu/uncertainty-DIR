@@ -145,7 +145,7 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         z, y_pred, var_pred = model(x)
         #
-        mse = F.mse_loss(y_pred, y)
+        mse = F.mse_loss(y_pred, y, reduction='sum')
         #
         nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
