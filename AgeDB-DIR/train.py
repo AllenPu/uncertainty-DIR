@@ -150,8 +150,8 @@ def train_one_epoch(args, model, train_loader, opts):
         nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss #+ variance_loss
-        loss = loss.to(torch.float)
+        loss = nll_loss.to(torch.float)#+ variance_loss
+        #loss = loss.to(torch.float)
         #
         opt_model.zero_grad()
         loss.backward()
