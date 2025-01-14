@@ -6,8 +6,7 @@ from FF import *
 
 
 def beta_nll_loss(mean, variance, target, beta=0.5):
-    """Compute beta-NLL loss
-    
+    """Compute beta-NLL loss 
     :param mean: Predicted mean of shape B x D
     :param variance: # Predicted variance of shape B x D
                     the differential entropy of the variance
@@ -28,6 +27,7 @@ def beta_nll_loss(mean, variance, target, beta=0.5):
         if beta > 0:
             loss = loss * (variance.detach() ** beta)
     #print('loss after', loss[:10])
+    # orignal is : loss = torch.sum(loss)
     loss = torch.sum(loss)
     return loss
 
