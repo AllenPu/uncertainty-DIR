@@ -259,7 +259,6 @@ if __name__ == '__main__':
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
-    print(f" maj is {len(maj)} med is {len(med)} low is {len(low)}")
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
@@ -272,16 +271,16 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    #output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
-    output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
+    output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
+    #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
         model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
         #
         with open(output_file, "a+") as file:
             file.write(str(e)+" ")
-            #file.write(" ".join(results) + '\n')
-            file.write(" ".join(pred_results) + '\n')
+            file.write(" ".join(results) + '\n')
+            #file.write(" ".join(pred_results) + '\n')
             file.close()
         #
         
