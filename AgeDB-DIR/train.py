@@ -167,22 +167,22 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.MSE:
-        # the variance from the model outputsp
+        # the variance from the model output
         uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     else:
-        # the variance from the model outputsp
+        # the variance from the model output
         uncer_maj, uncer_med, uncer_low, uncer_total  = \
             uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
-    vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
-
+    #
+    vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     #print(f' nll loss is {nll_loss}')
