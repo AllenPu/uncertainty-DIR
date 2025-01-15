@@ -259,6 +259,7 @@ if __name__ == '__main__':
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
+    print(f" maj is {len(maj)} med is {len(med)} low is {len(low)}")
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
