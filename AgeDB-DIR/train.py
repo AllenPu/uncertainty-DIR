@@ -95,6 +95,7 @@ parser.add_argument('--asymm', action='store_true', help='if use the asymmetric 
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
+parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -147,7 +148,10 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         mse = F.mse_loss(y_pred, y, reduction='sum')
         #
-        nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
+        if args.MSE:
+            nll_loss = 0.5 * (y_pred - y) ** 2
+        else:
+            nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss.to(torch.float)#+ variance_loss
@@ -165,8 +169,6 @@ def train_one_epoch(args, model, train_loader, opts):
     if args.MSE:
         # the variance from the model outputsp
         uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
-        #uncer_maj, uncer_med, uncer_low, uncer_total  = \
-        #    uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
