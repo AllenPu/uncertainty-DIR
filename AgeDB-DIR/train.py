@@ -274,7 +274,7 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    output_file = '_beta_' + str(args.beta) + '.txt'
+    output_file = '_beta_' + str(args.beta) +  'MSE' + str(args.MSE) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
