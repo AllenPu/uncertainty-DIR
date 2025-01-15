@@ -179,8 +179,6 @@ def train_one_epoch(args, model, train_loader, opts):
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
-    
-
 
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
