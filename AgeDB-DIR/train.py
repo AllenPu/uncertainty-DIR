@@ -166,9 +166,16 @@ def train_one_epoch(args, model, train_loader, opts):
         uncer_maj, uncer_med, uncer_low = label_uncertainty_accumulation(preds, labels, maj, med, low, device)
         uncer_total  = 0
     else:
-        uncer_maj, uncer_med, uncer_low, uncer_total  = uncertainty_accumulation(vars, labels, maj, med, low, device)
+        # the variance from the model outputsp
+        uncer_maj, uncer_med, uncer_low, uncer_total  = \
+            uncertainty_accumulation(vars, labels, maj, med, low, device)
+        # the variance from the target predictions
+        uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
+            uncertainty_accumulation(preds, labels, maj, med, low, device)
+        vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
+    
 
 
     #
@@ -176,7 +183,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #print(f' nll loss is {nll_loss}')
     #print(f' MSe is {mse}')
 
-    return model, results
+    return model, results, vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -262,14 +269,16 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
+    #output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
+    output_file = 'nll_output_vs_pred' + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, results = train_one_epoch(args, model, train_loader, opts)
+        model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
         #
         with open(output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(results) + '\n')
+            #file.write(" ".join(results) + '\n')
+            file.write(" ".join(pred_results) + '\n')
             file.close()
         #
         
