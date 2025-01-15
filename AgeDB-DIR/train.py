@@ -149,7 +149,7 @@ def train_one_epoch(args, model, train_loader, opts):
         mse = F.mse_loss(y_pred, y, reduction='sum')
         #
         if args.MSE:
-            nll_loss = 0.5 * (y_pred - y) ** 2
+            nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
         else:
             nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
