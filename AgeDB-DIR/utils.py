@@ -578,6 +578,9 @@ def test_group_acc(model, train_loader, prefix, args):
 def uncertainty_accumulation(var, label, maj, med, low, device):
     torch.save(var.cpu(), 'var.pt')
     torch.save(label.cpu(), 'label.pt')
+    maj = torch.Tensor(maj)
+    med = torch.Tensor(med)
+    low = torch.Tensor(low)
     aa = torch.cat([maj, med, low])
     torch.save(aa.cpu(), 'shots.pt')
     assert 1 == 2
