@@ -577,6 +577,9 @@ def test_group_acc(model, train_loader, prefix, args):
 # maj, med, low labels
 def uncertainty_accumulation(var, label, maj, med, low, device):
     torch.save(var.cpu(), 'var.pt')
+    torch.save(label.cpu(), 'label.pt')
+    aa = torch.cat([maj, med, low])
+    torch.save(aa.cpu(), 'shots.pt')
     assert 1 == 2
     maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
     med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
