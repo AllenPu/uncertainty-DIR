@@ -579,9 +579,9 @@ def uncertainty_accumulation(var, label, maj, med, low, device):
     maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
     med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
     low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)
-    maj_var = torch.mean(var[maj_indice].squeeze(-1).to(torch.float))
-    med_var = torch.mean(var[med_indice].squeeze(-1).to(torch.float))
-    low_var = torch.mean(var[low_indice].squeeze(-1).to(torch.float))
+    maj_var = torch.mean(var[maj_indice[:, 0]].squeeze(-1).to(torch.float))
+    med_var = torch.mean(var[med_indice[:, 0]].squeeze(-1).to(torch.float))
+    low_var = torch.mean(var[low_indice[:, 0]].squeeze(-1).to(torch.float))
     total_var = torch.mean(var.squeeze(-1).to(torch.float))
     return maj_var.item(), med_var.item(), low_var.item(), total_var.item()
 
@@ -595,12 +595,11 @@ def label_uncertainty_accumulation(pred, label, maj, med, low, device):
     maj_indice = torch.nonzero(torch.isin(label, torch.Tensor(maj).to(device)), as_tuple=False)
     med_indice = torch.nonzero(torch.isin(label, torch.Tensor(med).to(device)), as_tuple=False)
     low_indice = torch.nonzero(torch.isin(label, torch.Tensor(low).to(device)), as_tuple=False)
-    #print(' the maj indice is ', maj_indice.shape)
-    #print(' the shape is ', pred[maj_indice].shape)
-    maj_var = torch.var(pred[maj_indice].squeeze(-1).to(torch.float))
-    med_var = torch.var(pred[med_indice].squeeze(-1).to(torch.float))
-    low_var = torch.var(pred[low_indice].squeeze(-1).to(torch.float))
+    maj_var = torch.var(pred[maj_indice[:, 0]].squeeze(-1).to(torch.float))
+    med_var = torch.var(pred[med_indice[:, 0]].squeeze(-1).to(torch.float))
+    low_var = torch.var(pred[low_indice[:, 0]].squeeze(-1).to(torch.float))
     #
-    total_var = (len(maj)*maj_var + len(med)*med_var + len(low)*low_var)/(len(maj) + len(med) + len(low))
+    total_var = (len(maj)*maj_indice.shape[0]+ len(med)*med_indice.shape[0] + len(low)*low_indice.shape[0])\
+        /(maj_indice.shape[0] + med_indice.shape[0] + low_indice.shape[0])
     #
     return maj_var.item(), med_var.item(), low_var.item(), total_var.item()
