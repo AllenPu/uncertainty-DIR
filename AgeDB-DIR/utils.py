@@ -601,4 +601,6 @@ def label_uncertainty_accumulation(pred, label, maj, med, low, device):
     med_var = torch.var(pred[med_indice].squeeze(-1).to(torch.float))
     low_var = torch.var(pred[low_indice].squeeze(-1).to(torch.float))
     #
-    return maj_var.item(), med_var.item(), low_var.item()
+    total_var = (len(maj)*maj_var + len(med_var)*med_var + len(low)*low_var)/(len(maj) + len(med) + len(low))
+    #
+    return maj_var.item(), med_var.item(), low_var.item(), total_var.item()

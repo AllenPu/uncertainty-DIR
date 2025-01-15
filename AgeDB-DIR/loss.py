@@ -19,13 +19,10 @@ def beta_nll_loss(mean, variance, target, beta=0.5):
     #
     #variance = reverse_ent_to_var(ent)
     #
-    if beta == 1:
-        loss = 0.5 * (target - mean) ** 2
-    else:
-        loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
+    loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
         #print('loss before', loss[:10])
-        if beta > 0:
-            loss = loss * (variance.detach() ** beta)
+    if beta > 0:
+        loss = loss * (variance.detach() ** beta)
     #print('loss after', loss[:10])
     # orignal is : loss = torch.sum(loss)
     loss = torch.sum(loss)
