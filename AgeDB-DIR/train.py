@@ -162,10 +162,11 @@ def train_one_epoch(args, model, train_loader, opts):
         pred_list.append(y_pred)
     #
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
-    if args.beta == 1:
+    if args.MSE:
         # the variance from the model outputsp
-        uncer_maj, uncer_med, uncer_low, uncer_total  = \
-            uncertainty_accumulation(vars, labels, maj, med, low, device)
+        uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
+        #uncer_maj, uncer_med, uncer_low, uncer_total  = \
+        #    uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
@@ -271,16 +272,20 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    output_file = 'var_' + 'beta_' + str(args.beta) + '.txt'
+    output_file = '_beta_' + str(args.beta) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
         model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
         #
-        with open(output_file, "a+") as file:
+        with open('output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             #file.write(" ".join(pred_results) + '\n')
+            file.close()
+        with open('pred_var' + output_file, "a+") as file:
+            file.write(str(e)+" ")
+            file.write(" ".join(pred_results) + '\n')
             file.close()
         #
         
