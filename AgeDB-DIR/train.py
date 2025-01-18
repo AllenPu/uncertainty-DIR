@@ -278,7 +278,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
+        model, results, pred_results = train_one_epoch(args, model, val_loader, opts)
         #
         with open('output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
