@@ -280,12 +280,12 @@ if __name__ == '__main__':
     for e in tqdm(range(args.epoch)):
         model, results, pred_results = train_one_epoch(args, model, val_loader, opts)
         #
-        with open('output_variance' + output_file, "a+") as file:
+        with open('val_output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             #file.write(" ".join(pred_results) + '\n')
             file.close()
-        with open('pred_var' + output_file, "a+") as file:
+        with open('val_pred_var' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(pred_results) + '\n')
             file.close()
