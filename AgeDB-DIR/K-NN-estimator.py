@@ -1,7 +1,7 @@
 import torch
 from scipy.special import digamma
 
-def knn_entropy_torch(data, k=3):
+def knn_entropy_torch(data, k=1):
     """Estimate the entropy of a continuous random variable using k-NN."""
     n_samples, n_features = data.shape
     distances = torch.cdist(data, data, p=2)
