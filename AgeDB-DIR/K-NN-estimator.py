@@ -25,11 +25,11 @@ def conditional_entropy_torch(data, labels, k=3):
     for label in unique_labels:
         # Select samples for the current class
         class_data = data[labels == label]
-        class_prob = len(class_data) / n_samples  # P(Y = y)
+        target_prob = len(class_data) / n_samples  # P(Y = y)
         
         # Compute entropy for the current class
         class_entropy = knn_entropy_torch(class_data, k=k)
-        conditional_entropy += class_prob * class_entropy  # Weighted entropy
+        conditional_entropy += target_prob * class_entropy  # Weighted entropy
 
     return conditional_entropy
 
