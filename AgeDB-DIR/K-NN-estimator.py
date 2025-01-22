@@ -16,7 +16,8 @@ def knn_entropy_torch(data, k=1):
     )
     return entropy.item()
 
-def conditional_entropy_torch(data, labels, k=3):
+def conditional_entropy_torch(data, labels, target_freq = None, k=3):
+    # target_freq  : dict, key : label, value : prob
     """Estimate the conditional entropy H(X | Y) using k-NN."""
     unique_labels = torch.unique(labels)
     n_samples = len(labels)
@@ -29,6 +30,9 @@ def conditional_entropy_torch(data, labels, k=3):
         
         # Compute entropy for the current class
         class_entropy = knn_entropy_torch(class_data, k=k)
+        #
+        target_prob = target_freq[labels]
+        #
         conditional_entropy += target_prob * class_entropy  # Weighted entropy
 
     return conditional_entropy
