@@ -33,18 +33,23 @@ def conditional_entropy_torch(data, labels, k=3):
 
     return conditional_entropy
 
-# Example: Generate synthetic data
-torch.manual_seed(42)
-data = torch.cat([
-    torch.distributions.MultivariateNormal(
-        loc=torch.tensor([i, i]),
-        covariance_matrix=torch.eye(2)
-    ).sample((20,))
-    for i in range(5)
-])  # 5 classes, each with 20 samples
 
-labels = torch.tensor([i for i in range(5) for _ in range(20)])  # 5 classes
 
-# Estimate conditional entropy H(X | Y)
-cond_entropy = conditional_entropy_torch(data, labels, k=5)
-print("Estimated Conditional Entropy H(X | Y):", cond_entropy)
+if __name__ == "__main__":
+    # Example: Generate synthetic data
+    torch.manual_seed(42)
+    data = torch.cat([
+        torch.distributions.MultivariateNormal(
+            loc=torch.tensor([i, i]),
+            covariance_matrix=torch.eye(2)
+        ).sample((20,))
+        for i in range(5)
+    ])  # 5 classes, each with 20 samples
+
+    labels = torch.tensor([i for i in range(5) for _ in range(20)])  # 5 classes
+
+    # Estimate conditional entropy H(X | Y)？
+    cond_entropy = conditional_entropy_torch(data, labels, k=5)
+    print("Estimated Conditional Entropy H(X | Y):", cond_entropy)
+
+
