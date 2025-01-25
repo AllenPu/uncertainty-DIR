@@ -213,6 +213,8 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
         f.close()
 
 
+###########################################################################
+
 if __name__ == '__main__':
     args = parser.parse_args()
     setup_seed(args.seed)
