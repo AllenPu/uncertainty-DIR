@@ -134,7 +134,8 @@ def get_data_loader(args):
 def train_one_epoch(args, model, train_loader,  opts):
     model.train()
     #
-    opt_model, opt_mi = opts
+    #opt_model, opt_mi = opts
+    opt_model = opts
     #
     for idx, (x, y) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -219,7 +220,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     setup_seed(args.seed)
     store_name = ''
-    #
     #
     train_loader, test_loader, val_loader,  train_labels = get_data_loader(
         args)
