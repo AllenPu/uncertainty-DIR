@@ -232,7 +232,7 @@ if __name__ == '__main__':
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #
-    opts = [opt_model, opt_mi] 
+    opts = [opt_model]#, opt_mi] 
     #
     for e in tqdm(range(args.epoch)):
         model = train_one_epoch(args, model, train_loader, opts)
