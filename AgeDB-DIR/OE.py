@@ -10,7 +10,7 @@ import numpy as np
 def ordinalentropy(features, gt,  mask=None):
     """
     Features: a certain layer's features
-    gt: pixel-wise ground truth values, in depth estimation, gt.size()= n, h, w
+    gt: pixel-wise ground truth values (target label), in depth estimation, gt.size()= n, h, w
     mask: In case values of some pixels do not exist. For depth estimation, there are some pixels lack the ground truth values
     """
     f_n, f_c = features.size()
