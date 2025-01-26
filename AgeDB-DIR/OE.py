@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import random
 import numpy as np
 
-
+# taking every label as a centorid instead of K in the paper
 def ordinalentropy(features, gt,  mask=None):
     """
     Features: a certain layer's features
