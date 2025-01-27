@@ -53,6 +53,10 @@ def ordinalentropy(features, gt,  mask=None):
 
     return _tightness - _entropy
 
+###
+# test the performance of the DIR
+###
+
 
 def euclidean_dist(x, y):
     """
