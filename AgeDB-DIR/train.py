@@ -280,6 +280,8 @@ if __name__ == '__main__':
     for e in tqdm(range(args.epoch)):
         model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
         #
+        # record the prediction variance (from predicted labels) and model output variance respectively
+        #
         with open('tr_output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
