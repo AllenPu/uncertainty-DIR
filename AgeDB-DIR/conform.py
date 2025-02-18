@@ -13,8 +13,10 @@ def abs_err(model, loader):
 
 
 
-
-def pinball_loss(y_true, y_pred, tau=0.5):
+# tau here is controlling the  
+# tau_low = 0.5\alpha
+# tau_high = 1 - 0.5\alpha
+def pinball_loss(y_true, y_pred, tau=0.1):
     """
     Compute the pinball loss (quantile loss) for given quantile tau.
     
