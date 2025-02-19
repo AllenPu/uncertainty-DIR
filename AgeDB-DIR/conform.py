@@ -3,14 +3,22 @@ import torch
 #
 # return the absolute residu of the prediction
 #
-def abs_err(model, loader):
+def abs_err(model, loader, tau):
     with torch.no_grad():
         for idx, (x, y) in enumerate(loader):
-            y_pred, _, _ = model(x)
-            abs = torch.abs(y_pred - y)
-            abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
-    return abs_err, abs_idx
+            y_pred, lower, upper = model(x)
+            #lower, upper  =  torch.abs(lower) , torch.abs(upper)
+            err = torch.max(lower - y_pred, y_pred - upper)
+            abs_err, _ = torch.sort(err, dim=0)
+            idx = int((1-tau)*abs_err.shape[0])
+            q = abs_err[idx]
+            q_len = upper - lower  + 2*q
+            #abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
+    return q_len
 
+
+# low is the lower tau prediction
+# high
 
 
 # tau here is controlling the  
