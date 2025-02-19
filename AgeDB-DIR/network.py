@@ -157,4 +157,38 @@ class GaussianLikelihoodHead(nn.Module):
         return mean, var
 
 
+    
+
+##################################################
+
+class ResNet_conformal(nn.Module):
+    def __init__(self, args=None):
+        super(ResNet_conformal, self).__init__()
+        self.args = args
+        exec('self.model = torchvision.models.resnet{}(pretrained=False)'.format(args.model_depth))
+        #
+        fc_inputs = self.model.fc.in_features
+        #
+        self.model_extractor = nn.Sequential(*list(self.model.children())[:-1])
+        #
+        self.Flatten = nn.Flatten(start_dim=1)
+        #
+        self.model_linear =  nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.model_lower =  nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.model_upper =  nn.Sequential(nn.Linear(fc_inputs, 1))
         
+        
+    # g is the same shape of y
+    def forward(self, x):
+        #"output of model dim is 2G"
+        z = self.model_extractor(x)
+        #
+        z = self.Flatten(z)
+        #
+        y_pred = self.model_linear(z)
+        y_lower = self.model_lower(z)
+        y_upper = self.model_upper(z)
+        #
+        # the ouput dim of the embed is : bs,3
+        #
+        return y_pred, y_lower, y_upper, z
