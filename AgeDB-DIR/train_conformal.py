@@ -132,7 +132,7 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, train_labels
 
 
-def train_one_epoch(args, model, train_loader, opts):
+def train_one_epoch(args, model, train_loader, cal_loader, opts):
     model.train()
     #
     [opt_model] = opts
@@ -148,10 +148,12 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         mse = F.mse_loss(y_pred, y, reduction='sum')
         #
+        interval = abs_err(model, cal_loader, tau=0.1)
+        #
         if args.MSE:
             nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
         else:
-            nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
+            nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss.to(torch.float)#+ variance_loss

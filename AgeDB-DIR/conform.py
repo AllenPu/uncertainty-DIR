@@ -12,9 +12,9 @@ def abs_err(model, loader, tau):
             abs_err, _ = torch.sort(err, dim=0)
             idx = int((1-tau)*abs_err.shape[0])
             q = abs_err[idx]
-            q_len = upper - lower  + 2*q
+            interval = upper - lower  + 2*q
             #abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
-    return q_len
+    return interval
 
 
 # low is the lower tau prediction
