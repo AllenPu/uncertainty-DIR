@@ -6,7 +6,7 @@ import torch
 def abs_err(model, loader, tau):
     with torch.no_grad():
         for idx, (x, y) in enumerate(loader):
-            y_pred, lower, upper = model(x)
+            y_pred, lower, upper, _ = model(x)
             #lower, upper  =  torch.abs(lower) , torch.abs(upper)
             err = torch.max(lower - y_pred, y_pred - upper)
             abs_err, _ = torch.sort(err, dim=0)
