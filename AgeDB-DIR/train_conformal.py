@@ -161,17 +161,17 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss.to(torch.float)#+ variance_loss
+        loss = nll_loss.to(torch.float) + upper_loss + lower_loss
         #loss = loss.to(torch.float)
         #
         opt_model.zero_grad()
         loss.backward()
         opt_model.step()
-        #
-        var_list.append(var_pred)
+        #    
         label_list.append(y)
         pred_list.append(y_pred)
     #
+    '''
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.MSE:
         # the variance from the model output
@@ -194,8 +194,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     #print(f' nll loss is {nll_loss}')
     #print(f' MSe is {mse}')
-
-    return model, results, vars_results_from_pred
+    '''
+    return model#, results, vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
