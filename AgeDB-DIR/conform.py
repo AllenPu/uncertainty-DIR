@@ -3,6 +3,7 @@ import torch
 #
 # return the absolute residu of the prediction
 #
+# tau is a fixed number for estimating the upper and lower bound
 def abs_err(model, loader, tau):
     with torch.no_grad():
         for idx, (x, y) in enumerate(loader):

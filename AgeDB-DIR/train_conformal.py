@@ -135,6 +135,8 @@ def get_data_loader(args):
 def train_one_epoch(args, model, train_loader, cal_loader, opts):
     model.train()
     #
+    tau_low, tau_high = args.tau/2, 1- args.tau/2
+    #
     [opt_model] = opts
     #
     var_list, label_list, pred_list = [], [], []
@@ -144,9 +146,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         x, y  = x.to(device), y.to(device)
         #
-        y_pred, lower, uppper, z = model(x)
+        y_pred, lower, upper, z = model(x)
         #
         mse = F.mse_loss(y_pred, y, reduction='sum')
+        #
+        upper_loss = pinball_loss(y, upper, tau=tau_high)
+        lower_loss = pinball_loss(y, lower, tau=tau_low)
         #
         interval = abs_err(model, cal_loader, tau=0.1)
         #
