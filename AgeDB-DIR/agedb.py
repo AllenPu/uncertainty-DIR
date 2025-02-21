@@ -26,7 +26,7 @@ class AgeDB(data.Dataset):
         #
         self.aug = aug
         #
-
+        self.weight = self._prepare_weights(reweight, lds=True)
 
     def __len__(self):
         return len(self.df)
@@ -40,17 +40,15 @@ class AgeDB(data.Dataset):
         img = Image.open(os.path.join(
             self.data_dir, row['path'])).convert('RGB')
         transform = self.get_transform()
-        if self.aug:
-            transform2 = self.aug_transform()
-            img1, img2 = transform(img).unsqueeze(0), transform2(img).unsqueeze(0)
-            imgs = torch.cat((img1, img2), dim=0)
-            #print(f' size  {img.shape}')
-            # shape : bsz, 2,  3， 244， 244
-        else:
-            imgs = transform(img)
+
+        imgs = transform(img)
+
         label = np.asarray([row['age']]).astype('float32')
 
-        return imgs, label
+        weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
+
+
+        return imgs, label, weight
         
 
         
@@ -96,7 +94,7 @@ class AgeDB(data.Dataset):
     
     
 
-    def _prepare_weights(self, reweight, max_target=121, lds=False, lds_kernel='gaussian', lds_ks=5, lds_sigma=2):
+    def _prepare_weights(self, reweight, lds=False, max_target=121, lds_kernel='gaussian', lds_ks=5, lds_sigma=2):
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
         assert reweight != 'none' if lds else True, \
             "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"

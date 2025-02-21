@@ -141,7 +141,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #
     var_list, label_list, pred_list = [], [], []
     #
-    for idx, (x, y) in enumerate(train_loader):
+    for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y  = x.to(device), y.to(device)
