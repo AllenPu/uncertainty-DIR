@@ -159,6 +159,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
         else:
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+            nll_loss *= w.expand_as(nll_loss)
+            nll_loss = torch.mean(nll_loss)
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss.to(torch.float) + upper_loss + lower_loss
