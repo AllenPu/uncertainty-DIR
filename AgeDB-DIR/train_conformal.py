@@ -154,6 +154,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         lower_loss = pinball_loss(y, lower, tau=tau_low)
         #
         interval = abs_err(model, cal_loader, tau=0.1)
+        interval = interval.expand_as(y)
         #
         if args.MSE:
             nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
