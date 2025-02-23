@@ -167,7 +167,7 @@ class ResNet_conformal(nn.Module):
         self.args = args
         exec('self.model = torchvision.models.resnet{}(pretrained=False)'.format(args.model_depth))
         #
-        self.norm, self.weight_norm = args.norm, args.weight_norm
+        #self.norm, self.weight_norm = args.norm, args.weight_norm
         #
         fc_inputs = self.model.fc.in_features
         #
