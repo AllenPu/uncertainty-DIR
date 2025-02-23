@@ -64,7 +64,7 @@ parser.add_argument('--workers', type=int, default=32,
 parser.add_argument('--sigma', default=0.5, type=float)
 parser.add_argument('--la', action='store_true',
                     help='if use logit adj to train the imbalance')
-parser.add_argument('--model_depth', type=int, default=50,
+parser.add_argument('--model_depth', type=int, default=18,
                     help='resnet 18 or resnnet 50')
 parser.add_argument('--init_noise_sigma', type=float,
                     default=1., help='initial scale of the noise')
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     #
     maj, med, low = shot_count(train_labels)
     #
-    model = ResNet_conformal(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    model = ResNet_conformal(args).to(device)
     #
     #feature_dim = model.feature_dim
     #
