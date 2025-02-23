@@ -51,11 +51,6 @@ class AgeDB(data.Dataset):
         return imgs, label, weight
         
 
-        
-    def enable_multi_crop(self, enable=False):
-        if enable:
-            self.aug=True
-
     
 
     
