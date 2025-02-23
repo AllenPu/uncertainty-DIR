@@ -26,7 +26,10 @@ class AgeDB(data.Dataset):
         #
         self.aug = aug
         #
-        self.weight = self._prepare_weights(reweight, lds=True)
+        self.split = split
+        #
+        if self.plit == 'train':
+            self.weight = self._prepare_weights(reweight, lds=True)
 
     def __len__(self):
         return len(self.df)
@@ -45,10 +48,12 @@ class AgeDB(data.Dataset):
 
         label = np.asarray([row['age']]).astype('float32')
 
-        weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
-
-
-        return imgs, label, weight
+        if self.split == 'train':
+            weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
+            return imgs, label, weight
+        else:
+            return imgs, label
+        
         
 
     
