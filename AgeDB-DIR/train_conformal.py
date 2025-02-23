@@ -148,7 +148,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         y_pred, lower, upper, z = model(x)
         #
-        mse = F.mse_loss(y_pred, y, reduction='sum')
+        mse = F.mse_loss(y_pred, y, reduction='mean')
         #
         upper_loss = pinball_loss(y, upper, tau=tau_high)
         lower_loss = pinball_loss(y, lower, tau=tau_low)
@@ -157,7 +157,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         interval = interval.expand_as(y)
         #
         if args.MSE:
-            nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
+            nll_loss = mse
         else:
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
             nll_loss *= w.expand_as(nll_loss)
@@ -171,8 +171,9 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         loss.backward()
         opt_model.step()
         #    
-        label_list.append(y)
-        pred_list.append(y_pred)
+        #label_list.append(y)
+        #pred_list.append(y_pred)
+    print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
     #
     '''
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
@@ -219,7 +220,7 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            _, y_pred, var_pred = model(x)
+            y_pred, lower, upper, z  = model(x)
             #
             #print(f' y shape is  {y_output.shape}')
             #
@@ -292,6 +293,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
+        '''
         with open('tr_output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
@@ -302,7 +304,7 @@ if __name__ == '__main__':
             file.write(" ".join(pred_results) + '\n')
             file.close()
         #
-        
+        '''
         if e%20 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
