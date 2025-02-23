@@ -163,7 +163,7 @@ class GaussianLikelihoodHead(nn.Module):
 
 class ResNet_conformal(nn.Module):
     def __init__(self, args=None):
-        super(ResNet_conformal, self).__init__(name = 'resnet18', norm = False weight_norm = False)
+        super(ResNet_conformal, self).__init__(name = 'resnet18', norm = False, weight_norm = False)
         self.args = args
         exec('self.model = torchvision.models.resnet{}(pretrained=False)'.format(18))
         #
