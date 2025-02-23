@@ -17,6 +17,7 @@ def abs_err(model, loader, tau):
             q = abs_err[idx]
             interval = upper - lower  + 2*q
             #abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
+    print(f' the first {interval[:10]}')
     return interval
 
 
