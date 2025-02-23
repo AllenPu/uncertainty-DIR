@@ -5,8 +5,10 @@ import torch
 #
 # tau is a fixed number for estimating the upper and lower bound
 def abs_err(model, loader, tau):
+    device = next(model.parameters()).device
     with torch.no_grad():
-        for idx, (x, y) in enumerate(loader):
+        for idx, (x, _) in enumerate(loader):
+            x = x.to(device)
             y_pred, lower, upper, _ = model(x)
             #lower, upper  =  torch.abs(lower) , torch.abs(upper)
             err = torch.max(lower - y_pred, y_pred - upper)
