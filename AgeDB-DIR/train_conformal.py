@@ -153,7 +153,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         upper_loss = pinball_loss(y, upper, tau=tau_high)
         lower_loss = pinball_loss(y, lower, tau=tau_low)
         #
-        interval = abs_err(model, cal_loader, device, tau=0.1)
+        interval = abs_err(model, cal_loader, tau=0.1)
         interval = interval.expand_as(y)
         #
         if args.MSE:
