@@ -1,5 +1,5 @@
 import os
-import logging
+#import logging
 import numpy as np
 from PIL import Image
 from scipy.ndimage import convolve1d
