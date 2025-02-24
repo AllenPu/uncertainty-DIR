@@ -7,7 +7,7 @@ import torch
 def abs_err(model, loader, tau):
     device = next(model.parameters()).device
     with torch.no_grad():
-        for idx, (x, _) in enumerate(loader):
+        for idx, (x, _, w) in enumerate(loader):
             x = x.to(device)
             y_pred, lower, upper, _ = model(x)
             #lower, upper  =  torch.abs(lower) , torch.abs(upper)
