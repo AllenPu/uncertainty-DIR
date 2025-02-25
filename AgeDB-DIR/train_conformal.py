@@ -142,10 +142,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #
     var_list, label_list, pred_list = [], [], []
     #
-    infinite_loader = itertools.cycle(cal_loader)
+    infinite_cal_loader = itertools.cycle(cal_loader)
     #
     #for idx, (x, y, w) in enumerate(train_loader):
-    for train_batch, cal_batch in zip(train_loader, cal_loader):
+    for train_batch, cal_batch in zip(train_loader, infinite_cal_loader):
         #
         x, y, w = train_batch
         #print('shape is', x.shape, y.shape, g.shape)
