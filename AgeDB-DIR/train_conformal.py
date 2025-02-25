@@ -18,6 +18,7 @@ import torch.optim as optim
 import time
 from scipy.stats import gmean
 from conform import *
+import itertools
 
 
 # current sota 7.73, 7.46, 7.76, 10.08
@@ -141,7 +142,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #
     var_list, label_list, pred_list = [], [], []
     #
-    for idx, (x, y, w) in enumerate(train_loader):
+    infinite_loader = itertools.cycle(cal_loader)
+    #
+    #for idx, (x, y, w) in enumerate(train_loader):
+    for train_batch, cal_batch in zip(train_loader, cal_loader):
+        #
+        x, y, w = train_batch
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
@@ -153,7 +159,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         upper_loss = pinball_loss(y, upper, tau=tau_high)
         lower_loss = pinball_loss(y, lower, tau=tau_low)
         #
-        interval = abs_err(model, cal_loader, tau=0.1)
+        #
+        interval = abs_err(model, cal_batch, tau=0.1)
         interval = interval.expand_as(y)
         #
         if args.MSE:

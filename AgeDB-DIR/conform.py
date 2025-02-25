@@ -4,19 +4,20 @@ import torch
 # return the absolute residu of the prediction
 #
 # tau is a fixed number for estimating the upper and lower bound
-def abs_err(model, loader, tau):
+def abs_err(model, cal_batch, tau):
     device = next(model.parameters()).device
     with torch.no_grad():
-        for idx, (x, _, w) in enumerate(loader):
-            x = x.to(device)
-            y_pred, lower, upper, _ = model(x)
-            #lower, upper  =  torch.abs(lower) , torch.abs(upper)
-            err = torch.max(lower - y_pred, y_pred - upper)
-            abs_err, _ = torch.sort(err, dim=0)
-            idx = int((1-tau)*abs_err.shape[0])
-            q = abs_err[idx]
-            interval = upper - lower  + 2*q
-            #abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
+        x, y, w = cal_batch
+        #for idx, (x, _, w) in enumerate(loader):
+        x = x.to(device)
+        y_pred, lower, upper, _ = model(x)
+        #lower, upper  =  torch.abs(lower) , torch.abs(upper)
+        err = torch.max(lower - y_pred, y_pred - upper)
+        abs_err, _ = torch.sort(err, dim=0)
+        idx = int((1-tau)*abs_err.shape[0])
+        q = abs_err[idx]
+        interval = upper - lower  + 2*q
+        #abs_err, abs_idx = torch.sort(abs, -1), torch.argsort(abs, -1)
     #print(f' the first {interval[:10]}')
     return interval
 
