@@ -7,6 +7,7 @@ import torch
 def abs_err(model, cal_batch, tau):
     device = next(model.parameters()).device
     with torch.no_grad():
+        print(cal_batch)
         idx, (x, _, w) = cal_batch
         #for idx, (x, _, w) in enumerate(loader):
         x = x.to(device)
