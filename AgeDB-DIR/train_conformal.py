@@ -121,10 +121,14 @@ def get_data_loader(args):
     test_dataset = AgeDB(data_dir=args.data_dir, df=df_test,
                          img_size=args.img_size, split='test', group_num=args.groups)
     #
+    reminder_train, reminder_val = len(train_dataset)%int(args.batch_size), len(val_dataset)%int(args.batch_size)
+    train_drop_last = True if reminder_train <= reminder_val else False
+    val_drop_last = not train_drop_last
+    #
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.workers, pin_memory=True, drop_last=False)
+                              num_workers=args.workers, pin_memory=True, drop_last=train_drop_last)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                            num_workers=args.workers, pin_memory=True, drop_last=True)
+                            num_workers=args.workers, pin_memory=True, drop_last=val_drop_last)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                              num_workers=args.workers, pin_memory=True, drop_last=False)
     print(f"Training data size: {len(train_dataset)}")
