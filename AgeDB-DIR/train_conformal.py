@@ -124,6 +124,8 @@ def get_data_loader(args):
     reminder_train, reminder_val = len(train_dataset)%int(args.batch_size), len(val_dataset)%int(args.batch_size)
     train_drop_last = True if reminder_train <= reminder_val else False
     val_drop_last = not train_drop_last
+    print(f'train drop lase {train_drop_last} train {reminder_train}')
+    print(f'val drop last {val_drop_last} val {reminder_val}')
     #
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
                               num_workers=args.workers, pin_memory=True, drop_last=train_drop_last)
