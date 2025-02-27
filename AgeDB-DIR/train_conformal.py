@@ -128,9 +128,9 @@ def get_data_loader(args):
     print(f'val drop last {val_drop_last} val {reminder_val}')
     #
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.workers, pin_memory=True, drop_last=train_drop_last)
+                              num_workers=args.workers, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                            num_workers=args.workers, pin_memory=True, drop_last=val_drop_last)
+                            num_workers=args.workers, pin_memory=True, drop_last=False)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
                              num_workers=args.workers, pin_memory=True, drop_last=False)
     print(f"Training data size: {len(train_dataset)}")
