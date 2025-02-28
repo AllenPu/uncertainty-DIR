@@ -1,0 +1,2 @@
+bs: 128, mae: 8.95, standard (Meaning the code follows the default settings for other parameters)
+bs: 256, mae: 9.62, standard
