@@ -97,6 +97,7 @@ parser.add_argument('--weight_norm', action='store_true', help='if use the weigh
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
+parser.add_argument('--interval', action='store_true', help='only use distance between upper and lower to determine the variance')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -184,26 +185,30 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         loss.backward()
         opt_model.step()
         #    
-        #label_list.append(y)
-        #pred_list.append(y_pred)
+        label_list.append(y)
+        pred_list.append(y_pred)
+        if args.interval:
+            interval = torch.abs(upper - lower)
+        vars.append(interval)
     print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
     #
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
+    #labels, preds  = torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.MSE:
         # the variance from the model output
-        uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
+        #uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     else:
         # the variance from the model output
-        uncer_maj, uncer_med, uncer_low, uncer_total  = \
-            uncertainty_accumulation(vars, labels, maj, med, low, device)
+        #uncer_maj, uncer_med, uncer_low, uncer_total  = \
+        #    uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     #
-    results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
+    #results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
