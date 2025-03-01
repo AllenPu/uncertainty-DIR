@@ -202,8 +202,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     else:
         # the variance from the model output
-        #uncer_maj, uncer_med, uncer_low, uncer_total  = \
-        #    uncertainty_accumulation(vars, labels, maj, med, low, device)
+        uncer_maj, uncer_med, uncer_low, uncer_total  = \
+            uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
