@@ -147,7 +147,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #
     [opt_model] = opts
     #
-    vars, var_list, label_list, pred_list = [], [], [], []
+    var_list, label_list, pred_list = [], [], []
     #
     infinite_cal_loader = itertools.cycle(cal_loader)
     #
@@ -189,7 +189,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         pred_list.append(y_pred)
         if args.interval:
             interval = torch.abs(upper - lower)
-        vars.append(interval)
+        var_list.append(interval)
     print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
     #
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
