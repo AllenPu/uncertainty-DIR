@@ -188,7 +188,6 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #pred_list.append(y_pred)
     print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
     #
-    '''
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.MSE:
         # the variance from the model output
@@ -211,8 +210,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
     #print(f' nll loss is {nll_loss}')
     #print(f' MSe is {mse}')
-    '''
-    return model#, results, vars_results_from_pred
+    
+    return model, results, vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -302,11 +301,11 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(args, model, train_loader, val_loader, opts)
+        model, results, pred_results = train_one_epoch(args, model, train_loader, val_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
-        '''
+        
         with open('tr_output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
@@ -317,7 +316,7 @@ if __name__ == '__main__':
             file.write(" ".join(pred_results) + '\n')
             file.close()
         #
-        '''
+        
         if e%20 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
