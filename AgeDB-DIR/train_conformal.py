@@ -195,13 +195,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
     #labels, preds  = torch.cat(label_list, 0), torch.cat(pred_list, 0)
     if args.MSE:
-        # the variance from the model output
-        #uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
+        # the variance from the model output : upper and lower, but in MSE it is  0
+        uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     else:
-        # the variance from the model output
+        # the variance from the model output ： upper and lower
         uncer_maj, uncer_med, uncer_low, uncer_total  = \
             uncertainty_accumulation(vars, labels, maj, med, low, device)
         # the variance from the target predictions
@@ -308,7 +308,7 @@ if __name__ == '__main__':
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
         
-        with open('tr_output_variance' + output_file, "a+") as file:
+        with open('tr_lower_upper_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             #file.write(" ".join(pred_results) + '\n')
