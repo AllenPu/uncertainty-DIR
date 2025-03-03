@@ -602,4 +602,4 @@ def label_uncertainty_accumulation(pred, label, maj, med, low, device):
     total_var = (maj_var*maj_indice.shape[0]+ med_var*med_indice.shape[0] + low_var*low_indice.shape[0])\
         /(maj_indice.shape[0] + med_indice.shape[0] + low_indice.shape[0])
     #
-    return maj_var.item(), med_var.item(), low_var.item(), total_var
+    return maj_var.item(), med_var.item(), low_var.item(), total_var.item()
