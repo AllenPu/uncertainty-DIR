@@ -163,22 +163,23 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         mse = F.mse_loss(y_pred, y, reduction='mean')
         #
-        upper_loss = pinball_loss(y, upper, tau=tau_high)
-        lower_loss = pinball_loss(y, lower, tau=tau_low)
-        #
         #
         interval = abs_err(model, cal_batch, tau=0.1)
         interval = interval.expand_as(y)
         #
         if args.MSE:
-            nll_loss = mse
-        else:
+            nll_loss = mse.to(torch.float)
+        else:          #
+            upper_loss = pinball_loss(y, upper, tau=tau_high)
+            lower_loss = pinball_loss(y, lower, tau=tau_low)
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
             nll_loss *= w.expand_as(nll_loss)
             nll_loss = torch.mean(nll_loss)
+            nll_loss = nll_loss.to(torch.float) + upper_loss + lower_loss
+            
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss.to(torch.float) + upper_loss + lower_loss
+        loss = nll_loss
         #loss = loss.to(torch.float)
         #
         opt_model.zero_grad()
