@@ -30,7 +30,7 @@ class AgeDB(data.Dataset):
         #
         #print(self.split)
         #
-        if self.split != 'test':
+        if self.split != 'test' and self.reweight is not None:
             self.weights = self._prepare_weights(reweight, lds=True)
             
 
