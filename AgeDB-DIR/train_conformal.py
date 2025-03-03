@@ -97,7 +97,7 @@ parser.add_argument('--weight_norm', action='store_true', help='if use the weigh
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
-parser.add_argument('--interval', action='store_true', help='only use distance between upper and lower to determine the variance')
+parser.add_argument('--interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -187,7 +187,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #    
         label_list.append(y)
         pred_list.append(y_pred)
-        if args.interval:
+        if args.interval: # calculate the interval with direct upper and lower prediction
             interval = torch.abs(upper - lower)
         var_list.append(interval)
     print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
