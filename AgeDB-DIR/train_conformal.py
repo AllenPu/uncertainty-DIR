@@ -165,9 +165,9 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         mse = F.mse_loss(y_pred, y, reduction='mean')
         #
         #
-        if args.MSE:
+        if args.MSE:  # only MSE adopted
             nll_loss = mse.to(torch.float)
-        else:          #
+        else:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
             interval = abs_err(model, cal_batch, tau=0.1)
