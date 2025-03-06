@@ -164,7 +164,6 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         mse = F.mse_loss(y_pred, y, reduction='mean')
         #
-        #
         if args.MSE:  # only MSE adopted
             nll_loss = mse.to(torch.float)
         else:          # start to solve the conformal way
