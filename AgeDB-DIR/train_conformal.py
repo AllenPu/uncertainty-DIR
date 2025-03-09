@@ -21,7 +21,6 @@ from conform_cqr import *
 import itertools
 
 
-# current sota 7.73, 7.46, 7.76, 10.08
 # g 10 lr 0.0002 epoch 450 sigma 2 temp 0.02
 
 import os
