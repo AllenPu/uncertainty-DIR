@@ -104,8 +104,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 
-
-
 def get_data_loader(args):
     print('=====> Preparing data...')
     df = pd.read_csv(os.path.join(args.data_dir, "agedb.csv"))
