@@ -97,6 +97,8 @@ parser.add_argument('--weight_norm', action='store_true', help='if use the weigh
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
+#
+parser.add_argument('--lds', default=True, help='use lds to reweight or use equal weights')
 parser.add_argument('--interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
 #
@@ -112,11 +114,11 @@ def get_data_loader(args):
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', group_num=args.groups)
+                          split='train', group_num=args.groups, lds=args.lds)
     
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
-                        img_size=args.img_size, split='val', group_num=args.groups)
+                        img_size=args.img_size, split='val', group_num=args.groups, lds=args.lds)
     test_dataset = AgeDB(data_dir=args.data_dir, df=df_test,
                          img_size=args.img_size, split='test', group_num=args.groups)
     #

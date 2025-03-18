@@ -15,7 +15,7 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', reweight='inverse', group_num=10, max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', reweight='inverse', group_num=10, lds = True, max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
@@ -31,7 +31,7 @@ class AgeDB(data.Dataset):
         #print(self.split)
         #
         if self.split != 'test' and self.reweight is not None:
-            self.weights = self._prepare_weights(reweight, lds=True)
+            self.weights = self._prepare_weights(reweight, lds=lds)
             
 
     def __len__(self):
@@ -127,9 +127,13 @@ class AgeDB(data.Dataset):
             num_per_label = [
                 smoothed_value[min(max_target - 1, int(label))] for label in labels]
 
-        weights = [np.float32(1 / x) for x in num_per_label]
-        scaling = len(weights) / np.sum(weights)
-        weights = [scaling * x for x in weights]
+            weights = [np.float32(1 / x) for x in num_per_label]
+            scaling = len(weights) / np.sum(weights)
+            weights = [scaling * x for x in weights]
+        # if not lds set all 1 (equal weght)
+        else:
+            weights = [1 for x in num_per_label]
+        #
         return weights
     
 
