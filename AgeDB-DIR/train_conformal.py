@@ -73,9 +73,6 @@ parser.add_argument('--tsne', type=bool, default=False,
 parser.add_argument('--g_dis', action='store_true',
                     help='if dynamically adjust the tradeoff')
 parser.add_argument('--gamma', type=float, default=5, help='tradeoff rate')
-# if we set the weight as None
-parser.add_argument('--reweight', type=str, default=None,
-                    help='weight : inv or sqrt_inv')
 #
 parser.add_argument('--groups', type=int, default=10,
                     help='number of split bins to the wole datasets')
@@ -98,9 +95,10 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
+parser.add_argument('--reweight', default='inverse', help='which reweight type? None, inverse, invers_sqrt')
 parser.add_argument('--lds', default=True, help='use lds to reweight or use equal weights')
 parser.add_argument('--Conformal', action='store_false', help='default usage of the conformal regression for estimating the variance')
-parser.add_argument('--interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
+parser.add_argument('--direct_interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -115,7 +113,7 @@ def get_data_loader(args):
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', group_num=args.groups, lds=args.lds)
+                          split='train', group_num=args.groups, reweight=args.reweight, lds=args.lds)
     
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
@@ -188,8 +186,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #    
         label_list.append(y)
         pred_list.append(y_pred)
-        if args.interval: # calculate the interval with direct upper and lower prediction
+        #
+        if args.direct_interval: # calculate the interval with direct upper and lower prediction
             interval = torch.abs(upper - lower)
+        #
         var_list.append(interval)
     print(f' Nll is {nll_loss.item()} MSE is {mse.item()}')
     #
@@ -208,9 +208,9 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
-    #
+    # results come from the model output, if mse all 0
     results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
-    #
+    # vars come from the prediction y
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
@@ -300,7 +300,15 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi] 
     #
-    output_file = '_beta_' + str(args.beta) +  '_MSE_' + str(args.MSE) + '_INTERVAL_' + str(args.interval)+'.txt'
+    #define interval type
+    if args.MSE:
+        intervals = 'MSE_interval'
+    elif args.direct_interval:
+        intervals = 'direct_interval'
+    else:
+        intervals = 'conformal_y_interval'
+    #
+    output_file = '_beta_' + str(args.beta) + '_INTERVAL_' + str(intervals) +'.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
@@ -308,18 +316,16 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
-        
-        with open('tr_lower_upper_variance' + output_file, "a+") as file:
+        with open('vars_from_model' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             #file.write(" ".join(pred_results) + '\n')
             file.close()
-        with open('tr_pred_var' + output_file, "a+") as file:
+        with open('vars_from_pred' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(pred_results) + '\n')
             file.close()
-        #
-        
+        #   
         if e%20 == 0:
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)

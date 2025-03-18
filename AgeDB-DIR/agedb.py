@@ -15,12 +15,11 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', reweight='inverse', group_num=10, lds = True, max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='inverse', lds = True, max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
         self.split = split
-        self.group_range = int(max_age/group_num)
         self.group_list = []
         self.group_num = group_num
         #
