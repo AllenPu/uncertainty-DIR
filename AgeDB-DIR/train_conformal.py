@@ -99,6 +99,7 @@ parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
 parser.add_argument('--lds', default=True, help='use lds to reweight or use equal weights')
+parser.add_argument('--Conformal', action='store_false', help='default usage of the conformal regression for estimating the variance')
 parser.add_argument('--interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
 #
@@ -166,7 +167,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         if args.MSE:  # only MSE adopted
             nll_loss = mse.to(torch.float)
-        else:          # start to solve the conformal way
+        elif args.Conformal:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
             interval = abs_err(model, cal_batch, tau=0.1)
