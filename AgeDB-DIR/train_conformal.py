@@ -95,8 +95,8 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
-parser.add_argument('--reweight', default='inverse', help='which reweight type? None, inverse, invers_sqrt')
-parser.add_argument('--lds', default=True, help='use lds to reweight or use equal weights')
+parser.add_argument('--reweight', default='inverse', choices=['none', 'inverse', 'sqrt_inv'], help='which reweight type? None, inverse, invers_sqrt')
+parser.add_argument('--smooth', default='lds', choices=['none', 'lds'], help='use lds to reweight or use equal weights')
 parser.add_argument('--Conformal', action='store_false', help='default usage of the conformal regression for estimating the variance')
 parser.add_argument('--direct_interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
@@ -113,11 +113,11 @@ def get_data_loader(args):
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', group_num=args.groups, reweight=args.reweight, lds=args.lds)
+                          split='train', group_num=args.groups, reweight=args.reweight, smooth=args.smooth)
     
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
-                        img_size=args.img_size, split='val', group_num=args.groups, lds=args.lds)
+                        img_size=args.img_size, split='val', group_num=args.groups)
     test_dataset = AgeDB(data_dir=args.data_dir, df=df_test,
                          img_size=args.img_size, split='test', group_num=args.groups)
     #
@@ -308,7 +308,7 @@ if __name__ == '__main__':
     else:
         intervals = 'conformal_y_interval'
     #
-    output_file = '_beta_' + str(args.beta) + '_INTERVAL_' + str(intervals) +'.txt'
+    output_file = '_beta_' + str(args.beta) + '_INTERVAL_' + str(intervals) + '_smooth_' + str(args.smooth) + '_reweight_' + str(args.reweight) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):

@@ -15,7 +15,7 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='inverse', lds = True, max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='inverse', smooth = 'lds', max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
@@ -29,8 +29,8 @@ class AgeDB(data.Dataset):
         #
         #print(self.split)
         #
-        if self.split != 'test' and self.reweight is not None:
-            self.weights = self._prepare_weights(reweight, lds=lds)
+        if self.split != 'test':
+            self.weights = self._prepare_weights(reweight, smooth - smooth)
             
 
     def __len__(self):
@@ -96,7 +96,12 @@ class AgeDB(data.Dataset):
     
     
 
-    def _prepare_weights(self, reweight, lds=False, max_target=121, lds_kernel='gaussian', lds_ks=5, lds_sigma=2):
+    def _prepare_weights(self, reweight, smooth='lds', max_target=121, lds_kernel='gaussian', lds_ks=5, lds_sigma=2):
+        if smooth == 'lds':
+            lds = True
+        else:
+            lds = False
+
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
         assert reweight != 'none' if lds else True, \
             "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"
@@ -117,7 +122,10 @@ class AgeDB(data.Dataset):
             return None
         print(f"Using re-weighting: [{reweight.upper()}]")
 
-        if lds:
+        #
+        # if lds and reweight is both none, return weitgh = 1
+        #
+        if lds and reweight != 'none':
             lds_kernel_window = get_lds_kernel_window(
                 lds_kernel, lds_ks, lds_sigma)
             print(f'Using LDS: [{lds_kernel.upper()}] ({lds_ks}/{lds_sigma})')
@@ -125,7 +133,7 @@ class AgeDB(data.Dataset):
                 np.asarray([v for _, v in value_dict.items()]), weights=lds_kernel_window, mode='constant')
             num_per_label = [
                 smoothed_value[min(max_target - 1, int(label))] for label in labels]
-
+        elif reweight != 'none':
             weights = [np.float32(1 / x) for x in num_per_label]
             scaling = len(weights) / np.sum(weights)
             weights = [scaling * x for x in weights]
