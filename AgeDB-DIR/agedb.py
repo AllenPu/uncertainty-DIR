@@ -29,7 +29,7 @@ class AgeDB(data.Dataset):
         #
         #print(self.split)
         #
-        if self.split != 'test':
+        if self.split == 'train':
             self.weights = self._prepare_weights(reweight, smooth = smooth)
             
 
@@ -50,11 +50,11 @@ class AgeDB(data.Dataset):
 
         label = np.asarray([row['age']]).astype('float32')
 
-        if self.split != 'test':
+        if self.split == 'train':
             weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
             return imgs, label, weight
         else:
-            return imgs, label
+            return imgs, label, 1
         
         
     # return a dictionary, key : label, value : corresponding  weights.
