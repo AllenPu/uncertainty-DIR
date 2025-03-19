@@ -30,7 +30,7 @@ class AgeDB(data.Dataset):
         #print(self.split)
         #
         if self.split != 'test':
-            self.weights = self._prepare_weights(reweight, smooth - smooth)
+            self.weights = self._prepare_weights(reweight, smooth = smooth)
             
 
     def __len__(self):
