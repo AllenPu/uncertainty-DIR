@@ -14,6 +14,9 @@ def abs_err(model, cal_batch, tau):
         y_pred, lower, upper, _ = model(x)
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
         err = torch.max(lower - y_pred, y_pred - upper)
+        #
+        err *= w.expand_as(err)
+        #
         abs_err, _ = torch.sort(err, dim=0)
         idx = int((1-tau)*abs_err.shape[0])
         q = abs_err[idx]
