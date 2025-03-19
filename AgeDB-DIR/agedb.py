@@ -108,8 +108,10 @@ class AgeDB(data.Dataset):
             lds = False
 
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
+        print(f"----{self.split}-----")
         assert reweight != 'none' if lds else True, \
             "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"
+        print(f"----{self.split}-----")
 
         value_dict = {x: 0 for x in range(max_target)}
         labels = self.df['age'].values
