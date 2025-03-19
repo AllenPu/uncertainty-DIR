@@ -114,7 +114,8 @@ def get_data_loader(args):
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
                           split='train', group_num=args.groups, reweight=args.reweight, smooth=args.smooth)
-    
+    #
+    train_weight_dict = train_dataset.get_weight_dict
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
                         img_size=args.img_size, split='val', group_num=args.groups)
@@ -136,7 +137,7 @@ def get_data_loader(args):
     print(f"Training data size: {len(train_dataset)}")
     print(f"Validation data size: {len(val_dataset)}")
     print(f"Test data size: {len(test_dataset)}")
-    return train_loader, test_loader, val_loader, train_labels
+    return train_loader, test_loader, val_loader, train_labels, train_weight_dict
 
 
 def train_one_epoch(args, model, train_loader, cal_loader, opts):
@@ -168,7 +169,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         elif args.Conformal:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
-            interval = abs_err(model, cal_batch, tau=0.1)
+            interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1)
             interval = interval.expand_as(y)
             #
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
@@ -285,7 +286,7 @@ if __name__ == '__main__':
     setup_seed(args.seed)
     store_name = ''
     #
-    train_loader, test_loader, val_loader,  train_labels = get_data_loader(args)
+    train_loader, test_loader, val_loader,  train_labels, train_weight_dict = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
     #

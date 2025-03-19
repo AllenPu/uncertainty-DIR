@@ -57,8 +57,13 @@ class AgeDB(data.Dataset):
             return imgs, label
         
         
-
-    
+    # return a dictionary, key : label, value : corresponding  weights.
+    def get_weight_dict(self):
+        weight_label_dict = {}
+        labels = self.df['age'].values
+        for (w, l) in zip(self.weights, labels):
+            weight_label_dict[l] = weight_label_dict.get(l, int(w))
+        return weight_label_dict
 
     
 

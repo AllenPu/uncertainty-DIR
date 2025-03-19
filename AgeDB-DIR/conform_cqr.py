@@ -4,17 +4,20 @@ import torch
 # return the absolute residu of the prediction
 #
 # tau is a fixed number for estimating the upper and lower bound
-def abs_err(model, cal_batch, tau):
+# train_weight_dict : a dictionary, key :label, value : weight in training
+#
+def abs_err(model, cal_batch, train_weight_dict, tau):
     device = next(model.parameters()).device
     with torch.no_grad():
         #print(cal_batch)
-        x, _, w = cal_batch
+        x, y, _ = cal_batch
         #for idx, (x, _, w) in enumerate(loader):
         x = x.to(device)
         y_pred, lower, upper, _ = model(x)
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
         err = torch.max(lower - y_pred, y_pred - upper)
         #
+        w = torch.tensor([train_weight_dict[x] for x in y], dtype=torch.long)
         err *= w.expand_as(err)
         #
         abs_err, _ = torch.sort(err, dim=0)
