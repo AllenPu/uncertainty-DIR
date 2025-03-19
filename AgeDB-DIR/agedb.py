@@ -146,6 +146,8 @@ class AgeDB(data.Dataset):
         else:
             weights = [1 for x in num_per_label]
         #
+        print(f"-----{weights}-----{lds}-----")
+        #
         return weights
     
 
