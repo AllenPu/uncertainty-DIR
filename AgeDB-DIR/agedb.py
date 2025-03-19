@@ -108,7 +108,7 @@ class AgeDB(data.Dataset):
             lds = False
 
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
-        print(f"----{self.split}-----")
+        #
         assert reweight != 'none' if lds else True, \
             "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"
         #
@@ -125,9 +125,9 @@ class AgeDB(data.Dataset):
                           for k, v in value_dict.items()}
         num_per_label = [
             value_dict[min(max_target - 1, int(label))] for label in labels]
-        if not len(num_per_label) or reweight == 'none':
+        if not len(num_per_label) :  #or reweight == 'none':
             return None
-        print(f"----{self.split}-----")
+        #
         print(f"Using re-weighting: [{reweight.upper()}]")
         #
         # if lds and reweight is both none, return weitgh = 1
@@ -149,7 +149,7 @@ class AgeDB(data.Dataset):
         else:
             weights = [1 for x in num_per_label]
         #
-        print(f"--{self.split}---{reweight}-----{lds}-----")
+        #print(f"--{self.split}---{reweight}-----{lds}-----")
         #
         return weights
     
