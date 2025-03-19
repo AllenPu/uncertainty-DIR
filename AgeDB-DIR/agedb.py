@@ -126,11 +126,10 @@ class AgeDB(data.Dataset):
         if not len(num_per_label) or reweight == 'none':
             return None
         print(f"Using re-weighting: [{reweight.upper()}]")
-
         #
         # if lds and reweight is both none, return weitgh = 1
         #
-        if lds and reweight != 'none':
+        if lds:
             lds_kernel_window = get_lds_kernel_window(
                 lds_kernel, lds_ks, lds_sigma)
             print(f'Using LDS: [{lds_kernel.upper()}] ({lds_ks}/{lds_sigma})')
@@ -138,7 +137,8 @@ class AgeDB(data.Dataset):
                 np.asarray([v for _, v in value_dict.items()]), weights=lds_kernel_window, mode='constant')
             num_per_label = [
                 smoothed_value[min(max_target - 1, int(label))] for label in labels]
-        elif reweight != 'none':
+        #
+        if reweight != 'none' or lds:
             weights = [np.float32(1 / x) for x in num_per_label]
             scaling = len(weights) / np.sum(weights)
             weights = [scaling * x for x in weights]

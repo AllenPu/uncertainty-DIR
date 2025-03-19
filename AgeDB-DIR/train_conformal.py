@@ -112,6 +112,8 @@ def get_data_loader(args):
                                    'train'], df[df['split'] == 'val'], df[df['split'] == 'test']
     train_labels = df_train['age']
     #
+    print(f"---Prepare--{args.reweight}-----{args.lds}-----")
+    #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
                           split='train', group_num=args.groups, reweight=args.reweight, smooth=args.smooth)
     #
