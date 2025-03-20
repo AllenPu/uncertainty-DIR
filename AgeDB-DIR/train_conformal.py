@@ -1,6 +1,7 @@
 import time
 import argparse
 import logging
+import math
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -178,6 +179,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             nll_loss *= w.expand_as(nll_loss)
             nll_loss = torch.mean(nll_loss)
             nll_loss = nll_loss.to(torch.float) + upper_loss + lower_loss
+            #
+            if math.isnan(nll_loss.item()) or math.isnan(mse.item()):
+                print(interval)
+                print(upper_loss)
+                print(lower_loss)
+                assert 1== 2
+        
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss
