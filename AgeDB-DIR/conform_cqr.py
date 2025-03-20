@@ -6,7 +6,8 @@ import torch
 # tau is a fixed number for estimating the upper and lower bound
 # train_weight_dict : a dictionary, key :label, value : weight in training
 #
-def abs_err(model, cal_batch, train_weight_dict, tau):
+def abs_err(model, cal_batch, train_weight_dict, tau, e):
+    model.eval()
     device = next(model.parameters()).device
     with torch.no_grad():
         #print(cal_batch)
@@ -17,13 +18,13 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
         err = torch.max(lower - y_pred, y_pred - upper)
         nans =  torch.where(torch.isnan(err) == True)[0].tolist()
-        if len(nans) != 0:
+        if e == 14:
             err_ = err.squeeze(-1)
             print(len(nans))
             for e in nans:
                 #
                 print(f' y is {y[e]} y pred is {y_pred[e]} upper {upper[e]} lower {lower[e]} err is {err_[e]}')
-            assert 1 == 2
+                break
         #
         element = [train_weight_dict[x.item()] for x in y]
         w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)

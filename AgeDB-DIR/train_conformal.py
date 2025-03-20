@@ -143,7 +143,7 @@ def get_data_loader(args):
     return train_loader, test_loader, val_loader, train_labels, train_weight_dict
 
 
-def train_one_epoch(args, model, train_loader, cal_loader, opts):
+def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
     model.train()
     #
     tau_low, tau_high = args.tau/2, 1- args.tau/2
@@ -163,7 +163,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
         #
-        y_pred, lower, upper, z = model(x)
+        y_pred, lower, upper, _ = model(x)
         #
         mse = F.mse_loss(y_pred, y, reduction='mean')
         #
@@ -172,7 +172,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         elif args.Conformal:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
-            interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1)
+            interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
             interval = interval.expand_as(y)
             #
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
@@ -316,7 +316,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, results, pred_results = train_one_epoch(args, model, train_loader, val_loader, opts)
+        model, results, pred_results = train_one_epoch(args, model, train_loader, val_loader, opts, e)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
