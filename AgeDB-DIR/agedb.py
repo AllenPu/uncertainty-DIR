@@ -31,8 +31,7 @@ class AgeDB(data.Dataset):
         #
         if self.split == 'train':
             self.weights = self._prepare_weights(reweight, smooth = smooth)
-            print(self.weights)
-            assert 1 == 2
+           
 
     def __len__(self):
         return len(self.df)
