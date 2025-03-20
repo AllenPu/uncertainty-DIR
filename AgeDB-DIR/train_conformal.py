@@ -176,7 +176,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             interval = interval.expand_as(y)
             #
             nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-            nll_loss_ *= w.expand_as(nll_loss)
+            nll_loss_ = nll_loss * w.expand_as(nll_loss)
             nll_loss = torch.mean(nll_loss_)
             nll_loss = nll_loss.to(torch.float) + upper_loss + lower_loss
             #
