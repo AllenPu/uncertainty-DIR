@@ -20,7 +20,7 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
         element = [train_weight_dict[x.item()] for x in y]
         w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)
         #print(f" the shape of w is {w.shape}, the shape of err is {err.shape}")
-        err *= w
+        err *= w.to(device)
         #
         abs_err, _ = torch.sort(err, dim=0)
         idx = int((1-tau)*abs_err.shape[0])
