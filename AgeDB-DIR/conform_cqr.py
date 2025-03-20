@@ -21,6 +21,7 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
             err_ = err.squeeze(-1)
             for e in nans:
                 print(f' y is {y[e]} y pred is {y_pred[e]} upper {upper[e]} lower {lower[e]} err is {err_[e]}')
+            assert 1 == 2
         #
         element = [train_weight_dict[x.item()] for x in y]
         w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)
