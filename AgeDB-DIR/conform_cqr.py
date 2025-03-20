@@ -16,7 +16,7 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
         y_pred, lower, upper, _ = model(x)
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
         err = torch.max(lower - y_pred, y_pred - upper)
-        nans =  torch.where(torch.isnan(err) == False)[0].tolist()
+        nans =  torch.where(torch.isnan(err) == True)[0].tolist()
         if len(nans) != 0:
             err_ = err.squeeze(-1)
             for e in nans:
