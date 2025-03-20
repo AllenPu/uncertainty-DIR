@@ -18,7 +18,7 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
         err = torch.max(lower - y_pred, y_pred - upper)
         #
         element = [train_weight_dict[x.item()] for x in y]
-        w = torch.tensor(element, dtype=torch.long).squeeze(-1)
+        w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)
         #print(f" the shape of w is {w.shape}, the shape of err is {err.shape}")
         err *= w
         #
