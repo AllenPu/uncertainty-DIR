@@ -19,7 +19,9 @@ def abs_err(model, cal_batch, train_weight_dict, tau):
         nans =  torch.where(torch.isnan(err) == True)[0].tolist()
         if len(nans) != 0:
             err_ = err.squeeze(-1)
+            print(len(nans))
             for e in nans:
+                #
                 print(f' y is {y[e]} y pred is {y_pred[e]} upper {upper[e]} lower {lower[e]} err is {err_[e]}')
             assert 1 == 2
         #
