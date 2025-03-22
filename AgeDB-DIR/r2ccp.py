@@ -69,7 +69,7 @@ def find_intervals_above_value_with_interpolation(x_values, y_values, cutoff):
 
 
 #
-# X is from the train and later is from val
+# X is from the train (new input ones) and later is from val
 #
 def get_cp_lists(X, args, range_vals, X_cal, Y_cal, model):
     scores, all_scores = get_all_scores(range_vals, X_cal, Y_cal, model)
