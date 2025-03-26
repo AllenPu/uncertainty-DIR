@@ -28,6 +28,7 @@ class AgeDB(data.Dataset):
         self.split = split
         #
         self.y_min, self.y_max = np.max(df['age']), np.min(np.max(df['age']))
+        self.range_vals =torch.linspace(self.y_train, self.y_train, self.args.range_size)
         #
         #print(self.split)
         #
@@ -155,9 +156,6 @@ class AgeDB(data.Dataset):
         #
         return weights
     
-    def get_input_and_range(self, X, y, args):
-        range_vals = torch.linspace(self.y_train, self.y_train, args.range_size)
-        return range_vals
 
 
 
