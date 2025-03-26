@@ -88,7 +88,7 @@ def get_cp_lists(X, args, range_vals, X_cal, Y_cal, model):
 # get the interval for prediction on VAL
 # range_vals is the list [group1, group2, group3,..., group N]
 #
-def get_intervals(X_cal, y_cal, X_test, args, range_vals, model):
+def get_intervals(X_test, X_cal, y_cal, args, range_vals, model):
         intervals = get_cp_lists(X_test, args, range_vals, X_cal, y_cal, model)
         #actual_intervals = invert_intervals(intervals)
         return intervals
