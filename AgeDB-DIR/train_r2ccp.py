@@ -158,7 +158,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
             nll_loss = mse.to(torch.float)
         else:
             intervals = get_intervals(x, x_cal, y_cal, args, range_val, model)
-            var_pred = torch.var(interval)
+            var_pred = torch.var(intervals)
             
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
