@@ -98,7 +98,7 @@ parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
 # first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='none',
                     help='weight : inv or sqrt_inv')
-parser.add_argument('--smooth', default='lds', choices=['lds', 'none'], help='use LDS or not')
+parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

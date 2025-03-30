@@ -15,7 +15,7 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='none', smooth = 'lds', max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='none', smooth = 'none', max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
@@ -31,14 +31,16 @@ class AgeDB(data.Dataset):
         #
         self.reweight = reweight
         self.smooth = smooth
-        self.range_vals =torch.linspace(self.y_min, self.y_max, self.group_num)
+        self.range_vals = torch.linspace(self.y_min, self.y_max, self.group_num)
         #
         #print(self.split)
         #
         print(f' reweight is {reweight} and smooth is {smooth}')
         # only apply weights
-        if self.split == 'train' and self.smooth != 'lds':
+        if self.split == 'train' and self.reweight != 'none':
             self.weights = self._prepare_weights(self.reweight, smooth = self.smooth)
+        else:
+            self.weights = None
         #
         # first reweight then judge if use LDS
         #
