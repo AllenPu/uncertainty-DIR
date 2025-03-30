@@ -135,6 +135,7 @@ class AgeDB(data.Dataset):
             # clip weights for inverse re-weight
             value_dict = {k: np.clip(v, 5, 1000)
                           for k, v in value_dict.items()}
+        #
         num_per_label = [
             value_dict[min(max_target - 1, int(label))] for label in labels]
         if not len(num_per_label) :  #or reweight == 'none':
