@@ -195,7 +195,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     '''
 
-    return model, results, mae_dict#vars_results_from_pred
+    return model, mae_dict#vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -287,7 +287,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, results, pred_results = train_one_epoch(args, model, train_loader, opts)
+        model, pred_results = train_one_epoch(args, model, train_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
