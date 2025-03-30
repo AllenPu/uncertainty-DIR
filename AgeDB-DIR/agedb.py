@@ -29,7 +29,7 @@ class AgeDB(data.Dataset):
         #
         self.y_min, self.y_max = np.max(df['age']), np.min(np.max(df['age']))
         self.smooth = smooth
-        self.range_vals =torch.linspace(self.y_train, self.y_train, self.args.range_size)
+        self.range_vals =torch.linspace(self.y_min, self.y_max, self.args.range_size)
         #
         #print(self.split)
         #
