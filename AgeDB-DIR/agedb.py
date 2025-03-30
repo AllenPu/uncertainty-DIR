@@ -28,13 +28,15 @@ class AgeDB(data.Dataset):
         self.split = split
         #
         self.y_min, self.y_max = np.max(df['age']), np.min(np.max(df['age']))
+        #
+        self.reweight = reweight
         self.smooth = smooth
         self.range_vals =torch.linspace(self.y_min, self.y_max, self.group_num)
         #
         #print(self.split)
         #
         if self.split == 'train' and self.smooth == 'lds':
-            self.weights = self._prepare_weights(reweight, smooth = self.smooth)
+            self.weights = self._prepare_weights(self.reweight, smooth = self.smooth)
         #
         # first reweight then judge if use LDS
         #
