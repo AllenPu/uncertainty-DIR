@@ -319,7 +319,10 @@ if __name__ == '__main__':
             print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
-            #
+            # print the label
+            list_key = [k for k in pred_results.keys()]
+            print(list_key)
+            # print per-label MAE
             list_results = [pred_results[k] for k in pred_results.keys()]
             #
             print(list_results)
