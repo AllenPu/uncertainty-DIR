@@ -298,7 +298,7 @@ if __name__ == '__main__':
         '''
         #
         if e == args.epoch - 1 :
-    # test final model
+            # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
