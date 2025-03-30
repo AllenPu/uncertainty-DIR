@@ -45,7 +45,7 @@ parser.add_argument('--loss', type=str, default='l1', choices=[
                     'mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
 parser.add_argument('--lr', type=float, default=5e-5,
                     help='initial learning rate')
-parser.add_argument('--epoch', type=int, default=201,
+parser.add_argument('--epoch', type=int, default=101,
                     help='number of epochs to train')
 parser.add_argument('--momentum', type=float, default=0.9,
                     help='optimizer momentum')
