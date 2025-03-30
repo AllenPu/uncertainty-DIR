@@ -95,6 +95,7 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 # MSE only, else NLL
 parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
+# first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='none',
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='lds', choices=['lds', 'none'], help='use LDS or not')
