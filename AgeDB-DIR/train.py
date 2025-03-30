@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation
+from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation, per_label_mae
 import torch
 from loss import *
 from network import *
@@ -166,6 +166,9 @@ def train_one_epoch(args, model, train_loader, opts):
         pred_list.append(y_pred)
     #
     vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
+    #
+    mae_dict = per_label_mae(preds , labels)
+    ''''
     if args.MSE:
         # the variance from the model output
         uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
@@ -184,11 +187,9 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
-    #print(f' maj uncertainty {uncer_maj} med uncertainty {uncer_med} low uncertainty {uncer_low} total uncertainty {uncer_total}')
-    #print(f' nll loss is {nll_loss}')
-    #print(f' MSe is {mse}')
+    '''
 
-    return model, results, vars_results_from_pred
+    return model, results, mae_dict#vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -284,6 +285,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
+        '''
         with open('tr_output_variance' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
@@ -293,22 +295,24 @@ if __name__ == '__main__':
             file.write(str(e)+" ")
             file.write(" ".join(pred_results) + '\n')
             file.close()
+        '''
         #
-        
-        if e%20 == 0:
+        if e == args.epoch - 1 :
     # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
-    #
+            #
             print('=---------------------------------------------------------------------=\n')
             print(f' store name is {store_name}')
-        #
+            #
             print(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
                                                                              shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
-        #
+            #
             print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
-    #
+            #
+            list_results = [pred_results[k] for k in pred_results.keys()]
+            print(list_results)
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     
 
