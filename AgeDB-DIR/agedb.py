@@ -28,12 +28,13 @@ class AgeDB(data.Dataset):
         self.split = split
         #
         self.y_min, self.y_max = np.max(df['age']), np.min(np.max(df['age']))
+        self.smooth = smooth
         self.range_vals =torch.linspace(self.y_train, self.y_train, self.args.range_size)
         #
         #print(self.split)
         #
-        if self.split == 'train':
-            self.weights = self._prepare_weights(reweight, smooth = smooth)
+        if self.split == 'train' and self.smooth == 'lds':
+            self.weights = self._prepare_weights(reweight, smooth = self.smooth)
            
 
     def __len__(self):
@@ -54,7 +55,7 @@ class AgeDB(data.Dataset):
 
         label = np.asarray([row['age']]).astype('float32')
 
-        if self.split == 'train':
+        if self.split == 'train' and self.smooth == 'smooth':
             weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
             return imgs, label, weight
         else:
@@ -110,6 +111,7 @@ class AgeDB(data.Dataset):
             lds = True
         else:
             lds = False
+        print(f' Enabling LDS smoothness is {lds}')
 
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
         #

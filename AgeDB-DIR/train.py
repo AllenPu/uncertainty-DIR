@@ -139,20 +139,22 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     var_list, label_list, pred_list = [], [], []
     #
-    for idx, (x, y) in enumerate(train_loader):
+    for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
-        x, y  = x.to(device), y.to(device)
+        x, y, w  = x.to(device), y.to(device), w.to(device)
         #
         z, y_pred, var_pred = model(x)
         #
-        mse = F.mse_loss(y_pred, y, reduction='sum')
+        #mse = F.mse_loss(y_pred, y, reduction='sum')
         #
         if args.MSE:
             nll_loss = torch.sum(0.5 * (y_pred - y) ** 2)
         else:
             nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
+        if args.smooth  == 'lds':
+            nll_loss_ = nll_loss * w.expand_as(nll_loss)
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss.to(torch.float)#+ variance_loss
         #loss = loss.to(torch.float)

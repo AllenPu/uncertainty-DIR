@@ -97,6 +97,7 @@ parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
 parser.add_argument('--reweight', default='inverse', choices=['none', 'inverse', 'sqrt_inv'], help='which reweight type? None, inverse, invers_sqrt')
+# to enable the LDS
 parser.add_argument('--smooth', default='lds', choices=['none', 'lds'], help='use lds to reweight or use equal weights')
 parser.add_argument('--Conformal', action='store_false', help='default usage of the conformal regression for estimating the variance')
 parser.add_argument('--direct_interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
