@@ -15,7 +15,7 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='inverse', smooth = 'lds', max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='none', smooth = 'lds', max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
@@ -35,8 +35,9 @@ class AgeDB(data.Dataset):
         #
         #print(self.split)
         #
-        if self.split == 'train' and self.smooth == 'lds':
-            print(f' reweight is {reweight} and smooth is {smooth}')
+        print(f' reweight is {reweight} and smooth is {smooth}')
+        # only apply weights
+        if self.split == 'train' and self.reweight != 'none':
             self.weights = self._prepare_weights(self.reweight, smooth = self.smooth)
         #
         # first reweight then judge if use LDS
@@ -63,7 +64,8 @@ class AgeDB(data.Dataset):
 
         #if self.split == 'train' and self.reweight != 'none':
         weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
-        return weight
+        #
+        return imgs, label, weight
         #    return imgs, label, weight
         #else:
         #    return imgs, label, 1
