@@ -303,7 +303,7 @@ if __name__ == '__main__':
             file.close()
         '''
         #
-        if e == args.epoch - 1 :
+        if e % 1 == 0: #== args.epoch - 1 :
             # test final model
             mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
             #
