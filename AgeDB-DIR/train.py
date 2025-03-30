@@ -73,7 +73,7 @@ parser.add_argument('--tsne', type=bool, default=False,
 parser.add_argument('--g_dis', action='store_true',
                     help='if dynamically adjust the tradeoff')
 parser.add_argument('--gamma', type=float, default=5, help='tradeoff rate')
-parser.add_argument('--reweight', type=str, default=None,
+parser.add_argument('--reweight', type=str, default='none',
                     help='weight : inv or sqrt_inv')
 #
 parser.add_argument('--groups', type=int, default=10,
