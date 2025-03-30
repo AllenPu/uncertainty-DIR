@@ -312,6 +312,7 @@ if __name__ == '__main__':
             print('---------------------------------------------------------------------\n')
             #
             list_results = [pred_results[k] for k in pred_results.keys()]
+            #
             print(list_results)
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     
