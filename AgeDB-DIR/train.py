@@ -234,6 +234,32 @@ def test(model, test_loader, train_labels, args):
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
+#
+#
+#
+def per_label_mae(output, target):
+    """
+    output: Tensor of shape (N, 1)
+    target: Tensor of shape (N,) with M unique labels
+    Returns: dict mapping each label to its MAE
+    """
+    output = output.view(-1)  # (N,)
+    target = target.view(-1)  # (N,)
+
+    unique_labels = target.unique()
+    mae_dict = {}
+
+    for label in unique_labels:
+        mask = target == label
+        if mask.sum() == 0:
+            continue
+        pred_subset = output[mask]
+        true_subset = target[mask].float()
+        mae = torch.abs(pred_subset - true_subset).mean()
+        mae_dict[int(label.item())] = mae.item()
+
+    return mae_dict
+
 
 ######################
 # write log for the test
