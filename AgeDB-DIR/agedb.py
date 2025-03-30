@@ -15,7 +15,7 @@ import random
 
 
 class AgeDB(data.Dataset):
-    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='none', smooth = 'none', max_age=100, aug=False):
+    def __init__(self, df, data_dir, img_size, split='train', group_num=10, reweight='inv', smooth = 'none', max_age=100, aug=False):
         self.df = df
         self.data_dir = data_dir
         self.img_size = img_size
@@ -29,16 +29,16 @@ class AgeDB(data.Dataset):
         #
         self.y_min, self.y_max = np.max(df['age']), np.min(np.max(df['age']))
         #
-        self.reweight = reweight
-        self.smooth = smooth
+        self.reweight, self.smooth = reweight, smooth
+        #
         self.range_vals = torch.linspace(self.y_min, self.y_max, self.group_num)
         #
         #print(self.split)
         #
         print(f' reweight is {reweight} and smooth is {smooth}')
         # only apply weights
-        if self.split == 'train' and self.reweight != 'none':
-            self.weights = self._prepare_weights(self.reweight, smooth = self.smooth)
+        if self.split == 'train':
+            self.weights = self._prepare_weights(reweight = self.reweight, smooth = self.smooth)
         else:
             self.weights = None
         #
@@ -124,13 +124,14 @@ class AgeDB(data.Dataset):
             lds = False
         #print(f' Enabling LDS smoothness is {lds}')
 
-        assert reweight in {'none', 'inverse', 'sqrt_inv'}
+        assert reweight in {'inv', 'sqrt_inv'}
         #
         #assert reweight != 'none' if lds else True, \
         #    "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"
         #
         value_dict = {x: 0 for x in range(max_target)}
         labels = self.df['age'].values
+        # this is for reweight none
         for label in labels:
             value_dict[min(max_target - 1, int(label))] += 1
         if reweight == 'sqrt_inv':
@@ -138,10 +139,11 @@ class AgeDB(data.Dataset):
         elif reweight == 'inverse':
             # clip weights for inverse re-weight
             value_dict = {k: np.clip(v, 5, 1000)
-                          for k, v in value_dict.items()}
+                          for k, v in value_dict.items()}       
         #
         num_per_label = [
             value_dict[min(max_target - 1, int(label))] for label in labels]
+        #
         if not len(num_per_label) :  #or reweight == 'none':
             return None
         #
@@ -157,14 +159,11 @@ class AgeDB(data.Dataset):
                 np.asarray([v for _, v in value_dict.items()]), weights=lds_kernel_window, mode='constant')
             num_per_label = [
                 smoothed_value[min(max_target - 1, int(label))] for label in labels]
-        #
-        if reweight != 'none' or lds:
-            weights = [np.float32(1 / x) for x in num_per_label]
-            scaling = len(weights) / np.sum(weights)
-            weights = [scaling * x for x in weights]
-        # if not lds set all 1 (equal weght)
-        else:
-            weights = [1 for x in num_per_label]
+            #
+            #
+        weights = [np.float32(1 / x) for x in num_per_label]
+        scaling = len(weights) / np.sum(weights)
+        weights = [scaling * x for x in weights]
         #
         #print(f"--{self.split}---{reweight}-----{lds}-----")
         #
