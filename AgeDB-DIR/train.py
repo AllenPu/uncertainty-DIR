@@ -73,8 +73,6 @@ parser.add_argument('--tsne', type=bool, default=False,
 parser.add_argument('--g_dis', action='store_true',
                     help='if dynamically adjust the tradeoff')
 parser.add_argument('--gamma', type=float, default=5, help='tradeoff rate')
-parser.add_argument('--reweight', type=str, default='none',
-                    help='weight : inv or sqrt_inv')
 #
 parser.add_argument('--groups', type=int, default=10,
                     help='number of split bins to the wole datasets')
@@ -97,6 +95,8 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 # MSE only, else NLL
 parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
+parser.add_argument('--reweight', type=str, default='none',
+                    help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='lds', choices=['lds', 'none'], help='use LDS or not')
 #
 #
