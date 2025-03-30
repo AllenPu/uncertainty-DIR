@@ -96,7 +96,8 @@ parser.add_argument('--weight_norm', action='store_true', help='if use the weigh
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 # MSE only, else NLL
-parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
+parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
+parser.add_argument('--smooth', default='lds', choices=['lds', 'none'], help='use LDS or not')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -113,7 +114,7 @@ def get_data_loader(args):
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', reweight=args.reweight, group_num=args.groups)
+                          split='train', reweight=args.reweight, group_num=args.groups, smooth=args.smooth)
     
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
