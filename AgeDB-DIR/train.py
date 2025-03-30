@@ -95,6 +95,7 @@ parser.add_argument('--asymm', action='store_true', help='if use the asymmetric 
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
+# MSE only, else NLL
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
 #
