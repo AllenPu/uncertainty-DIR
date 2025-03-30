@@ -61,11 +61,12 @@ class AgeDB(data.Dataset):
 
         label = np.asarray([row['age']]).astype('float32')
 
-        if self.split == 'train' and self.reweight != 'none':
-            weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
-            return imgs, label, weight
-        else:
-            return imgs, label, 1
+        #if self.split == 'train' and self.reweight != 'none':
+        weight = np.asarray([self.weights[index]]).astype('float32') if self.weights is not None else np.asarray([np.float32(1.)])
+        return weight
+        #    return imgs, label, weight
+        #else:
+        #    return imgs, label, 1
         
         
     # return a dictionary, key : label, value : corresponding  weights.
@@ -117,13 +118,12 @@ class AgeDB(data.Dataset):
             lds = True
         else:
             lds = False
-        print(f' Enabling LDS smoothness is {lds}')
+        #print(f' Enabling LDS smoothness is {lds}')
 
         assert reweight in {'none', 'inverse', 'sqrt_inv'}
         #
         #assert reweight != 'none' if lds else True, \
         #    "Set reweight to \'sqrt_inv\' (default) or \'inverse\' when using LDS"
-        #
         #
         value_dict = {x: 0 for x in range(max_target)}
         labels = self.df['age'].values
