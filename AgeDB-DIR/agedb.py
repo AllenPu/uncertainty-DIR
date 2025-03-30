@@ -36,6 +36,8 @@ class AgeDB(data.Dataset):
         if self.split == 'train' and self.smooth == 'lds':
             self.weights = self._prepare_weights(reweight, smooth = self.smooth)
         #
+        # first reweight then judge if use LDS
+        #
         print(f' reweight is {reweight} and smooth is {smooth}')
            
 
