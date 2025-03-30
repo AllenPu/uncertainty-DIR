@@ -114,8 +114,7 @@ def get_data_loader(args):
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', reweight=args.reweight, group_num=args.groups, smooth=args.smooth)
-    
+                          split='train', reweight=args.reweight, group_num=args.groups, smooth=args.smooth)   
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
                         img_size=args.img_size, split='val', group_num=args.groups)
