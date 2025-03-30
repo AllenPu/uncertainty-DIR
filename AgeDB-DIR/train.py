@@ -95,6 +95,7 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 # MSE only, else NLL
 parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
+parser.add_argument('--MAE', action='store_true', help='only use MAE or not')
 # first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
@@ -152,6 +153,8 @@ def train_one_epoch(args, model, train_loader, opts):
         #
         if args.MSE:
             nll_loss = 0.5 * (y_pred - y) ** 2
+        elif args.MAE:
+            nll_loss = torch.abs(y_pred - y)
         else:
             nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
