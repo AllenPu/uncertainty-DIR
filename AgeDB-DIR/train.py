@@ -212,6 +212,8 @@ def test(model, test_loader, train_labels, args):
     #
     pred, labels = [], []
     #
+    pred_list, label_list = [], []
+    #
     with torch.no_grad():
         for idx, (x, y, _) in enumerate(test_loader):
             bsz = x.shape[0]
@@ -234,13 +236,19 @@ def test(model, test_loader, train_labels, args):
             mse_pred.update(mse_y_pred.item(), bsz)
             #
             mae_pred.update(mae_y.item(), bsz)
+            #
+            label_list.append(y)
+            pred_list.append(y_pred)
+        label_, pred_  = torch.cat(label_list, 0), torch.cat(pred_list, 0)
         #
         # gmean
         gmean_pred = gmean(np.hstack(gmean_loss_all_pred), axis=None).astype(float)
         shot_pred = shot_metric(pred, labels, train_labels)
     print(f' MSE is {mse_pred.avg}')
-
-    return mae_pred.avg, shot_pred, gmean_pred
+    #
+    mae_dict = per_label_mae(pred_, label_)
+    #
+    return mae_pred.avg, shot_pred, gmean_pred, mae_dict
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
@@ -290,7 +298,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, pred_results = train_one_epoch(args, model, train_loader, opts)
+        model, mae_pred_tr = train_one_epoch(args, model, train_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
@@ -308,7 +316,7 @@ if __name__ == '__main__':
         #
         if e == args.epoch - 1 :
             # test final model
-            mae_pred, shot_pred, gmean_pred  = test(model, test_loader, train_labels, args)
+            mae_pred, shot_pred, gmean_pred, mae_pred_te  = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
             print(f' store name is {store_name}')
@@ -319,13 +327,21 @@ if __name__ == '__main__':
             print(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
-            # print the label
-            list_key = [k for k in pred_results.keys()]
-            print(list_key)
-            # print per-label MAE
-            list_results = [pred_results[k] for k in pred_results.keys()]
             #
-            print(list_results)
+            print("----------train-----------")
+            list_key_tr = [k for k in mae_pred_tr.keys()]
+            print(list_key_tr)
+            # print per-label MAE
+            list_results_tr = [mae_pred_tr[k] for k in mae_pred_tr.keys()]
+            #
+            print(list_results_tr)
+            print("----------test-----------")
+            list_key_te = [k for k in mae_pred_te.keys()]
+            print(list_key_te)
+            # print per-label MAE
+            list_results_te = [mae_pred_te[k] for k in mae_pred_te.keys()]
+            #
+            print(list_results_te)
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     
 
