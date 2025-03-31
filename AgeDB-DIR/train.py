@@ -334,6 +334,9 @@ if __name__ == '__main__':
             # print per-label MAE
             list_results_tr = [mae_pred_tr[k] for k in mae_pred_tr.keys()]
             #
+            mae_pred, _, _, _  = test(model, train_loader, train_labels, args)
+            print(f'Overall MAE for train is {mae_pred}')
+            #
             print(list_results_tr)
             print("----------test-----------")
             list_key_te = [k for k in mae_pred_te.keys()]
