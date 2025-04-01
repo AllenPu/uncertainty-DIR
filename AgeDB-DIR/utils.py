@@ -630,3 +630,30 @@ def per_label_mae(output, target):
         mae_dict[int(label.item())] = mae.item()
 
     return mae_dict
+
+
+#
+# per label forbenius norm
+#
+def per_label_frobenius_norm(features, labels):
+    """
+    features: Tensor of shape (N, D)
+    labels: Tensor of shape (N,)
+    Returns: dict {label: avg Frobenius norm}
+    """
+    features = features.view(features.size(0), -1)  # Ensure shape (N, D)
+    labels = labels.view(-1)  # Ensure shape (N,)
+
+    unique_labels = labels.unique()
+    frob_norms = {}
+
+    for label in unique_labels:
+        mask = labels == label
+        feats = features[mask]  # (n_c, D)
+        if feats.size(0) == 0:
+            continue
+        norms = torch.norm(feats, p='fro', dim=1)  # L2 norm per row
+        avg = norms.mean().item()
+        frob_norms[int(label.item())] = avg
+
+    return frob_norms
