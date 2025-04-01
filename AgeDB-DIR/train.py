@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation, per_label_mae
+from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation, per_label_mae, per_label_frobenius_norm
 import torch
 from loss import *
 from network import *
@@ -140,7 +140,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     [opt_model] = opts
     #
-    var_list, label_list, pred_list = [], [], []
+    var_list, label_list, pred_list, z_list = [], [], [], []
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -173,10 +173,12 @@ def train_one_epoch(args, model, train_loader, opts):
         var_list.append(var_pred)
         label_list.append(y)
         pred_list.append(y_pred)
+        z_list.append(z)
     #
-    vars, labels, preds  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0)
+    vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     #
-    mae_dict = per_label_mae(preds , labels)
+    #mae_dict = per_label_mae(preds , labels)
+    mae_dict = per_label_frobenius_norm(z_, labels)
     ''''
     if args.MSE:
         # the variance from the model output
@@ -212,7 +214,7 @@ def test(model, test_loader, train_labels, args):
     #
     pred, labels = [], []
     #
-    pred_list, label_list = [], []
+    pred_list, label_list, z_list = [], [], []
     #
     with torch.no_grad():
         for idx, (x, y, _) in enumerate(test_loader):
@@ -221,7 +223,7 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            _, y_pred, var_pred = model(x)
+            z, y_pred, var_pred = model(x)
             #
             #print(f' y shape is  {y_output.shape}')
             #
@@ -239,14 +241,16 @@ def test(model, test_loader, train_labels, args):
             #
             label_list.append(y)
             pred_list.append(y_pred)
-        label_, pred_  = torch.cat(label_list, 0), torch.cat(pred_list, 0)
+            z_list.append(z)
+        label_, pred_, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
         #
         # gmean
         gmean_pred = gmean(np.hstack(gmean_loss_all_pred), axis=None).astype(float)
         shot_pred = shot_metric(pred, labels, train_labels)
     print(f' MSE is {mse_pred.avg}')
     #
-    mae_dict = per_label_mae(pred_, label_)
+    #mae_dict = per_label_mae(pred_, label_)
+    mae_dict = per_label_frobenius_norm(z_, label_)
     #
     return mae_pred.avg, shot_pred, gmean_pred, mae_dict
         # np.hstack(group), np.hstack(group_pred) #newly added
