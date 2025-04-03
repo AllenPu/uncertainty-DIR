@@ -274,6 +274,9 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
         f.write('---------------------------------------------------------------------\n')
         f.close()
+#############################
+
+
 
 
 if __name__ == '__main__':
@@ -311,10 +314,6 @@ if __name__ == '__main__':
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
             #file.write(" ".join(pred_results) + '\n')
-            file.close()
-        with open('tr_pred_var' + output_file, "a+") as file:
-            file.write(str(e)+" ")
-            file.write(" ".join(pred_results) + '\n')
             file.close()
         '''
         #
