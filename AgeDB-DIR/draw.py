@@ -7,11 +7,12 @@ import os
 #y1 = np.exp(-x)
 #y2 = np.log(x)
 
-f = r'C:\Users\rpu2\Desktop\revised NLL MSE MAE + LDS.csv'
+f = r'C:\Users\rpu2\Desktop\revised NLL_MSE_MAE with LDS Frobs and MAE.csv'
 df = pd.read_csv(f)
 
 
-for name in ['NLL', 'NLL_LDS', 'MSE', 'MSE_LDS', 'MAE', 'MAE_LDS']: 
+#for name in ['NLL', 'NLL_LDS', 'MSE', 'MSE_LDS', 'MAE', 'MAE_LDS']: 
+for name in ['MSE']: 
     '''
     a1, a2, a3, a4 = f'{name} Train Frob', f'{name} Train MAE', f'{name} Test Frob', f'{name} Test MAE' 
     print(f'{name} Train Frob', f'{name} Train MAE', f'{name} Test Frob', f'{name} Test MAE' )
@@ -36,11 +37,11 @@ for name in ['NLL', 'NLL_LDS', 'MSE', 'MSE_LDS', 'MAE', 'MAE_LDS']:
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     ax1.plot(x, y1,'r',label="Train Frob")
-    ax1.plot(x, y3,'g', label="Train MAE")
+    ax1.plot(x, y3,'g', label="Test Frob")
     ax1.legend(loc=1)
     ax1.set_ylabel('Frob')#
     ax2 = ax1.twinx() # this is the important function
-    ax2.plot(x, y2, 'y',label = "Test Frob")
+    ax2.plot(x, y2, 'y',label = "Train MAE")
     ax2.plot(x, y4, 'pink',label = "Test MAE")
     ax2.legend(loc=2)
     ax2.set_xlim([0, 100])
