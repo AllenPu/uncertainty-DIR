@@ -74,6 +74,7 @@ class AgeDB(data.Dataset):
         
         
     # return a dictionary, key : label, value : corresponding  weights.
+    # sometime redundent
     def get_weight_dict(self):
         weight_label_dict = {}
         labels = self.df['age'].values
@@ -169,6 +170,31 @@ class AgeDB(data.Dataset):
         #
         return weights
     
+    #
+    # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low
+    #
+    def _get_shots(self):
+        train_labels = self.df['age']
+        train_class_count = []
+        for l in np.unique(train_labels):
+            train_class_count.append(len(
+                train_labels[train_labels == l]))
+        #############
+        train_shot_dict = {}
+        for i in range(len(train_class_count)):
+            if train_class_count[i] > 100:
+                train_shot_dict[i] = 0
+            elif train_class_count[i] < 20:
+                train_shot_dict[i] = 2
+            #print(train_class_count[i])
+            #print(l1_per_class[i])
+            #print(l1_all_per_class[i])
+            else:
+                train_shot_dict[i] = 1
+        ######################
+        return train_shot_dict
+
+       
 
 
 
