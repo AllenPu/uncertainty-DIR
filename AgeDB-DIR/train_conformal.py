@@ -100,7 +100,8 @@ parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 parser.add_argument('--reweight', default='inverse', choices=['none', 'inverse', 'sqrt_inv'], help='which reweight type? None, inverse, invers_sqrt')
 # to enable the LDS
 parser.add_argument('--smooth', default='lds', choices=['none', 'lds'], help='use lds to reweight or use equal weights')
-parser.add_argument('--Conformal', action='store_false', help='default usage of the conformal regression for estimating the variance')
+parser.add_argument('--CQR', action='store_false', help='default  CQR usage of the conformal regression for estimating the variance')
+parser.add_argument('--conforma_LS', action='store_true', help=' use  conform regression label shift')
 parser.add_argument('--direct_interval', action='store_true', help='only use distance between upper & lower for the variance instead of the y_hat prediction variance')
 #
 #
@@ -171,16 +172,22 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
         #
         if args.MSE:  # only MSE adopted
             nll_loss = mse.to(torch.float)
-        elif args.Conformal:          # start to solve the conformal way
+        elif args.CQR:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
             interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
-            interval = interval.expand_as(y)
-            #
-            nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-            nll_loss_ = nll_loss * w.expand_as(nll_loss)
-            nll_loss = torch.mean(nll_loss_)
-            nll_loss = nll_loss.to(torch.float) + upper_loss + lower_loss
+        elif args.conforma_LS:
+            calib_x, calib_y, _ = cal_batch
+            interval = cal_interval(model, calib_x, calib_y, y_pred, train_weight_dict)
+        #######################
+            
+        interval = interval.expand_as(y)
+        #
+        nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+        nll_loss_ = nll_loss * w.expand_as(nll_loss)
+        nll_loss = torch.mean(nll_loss_)
+        nll_loss = nll_loss.to(torch.float) + upper_loss + lower_loss
+        
         #
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
         loss = nll_loss

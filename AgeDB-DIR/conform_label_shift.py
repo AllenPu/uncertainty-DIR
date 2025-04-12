@@ -28,7 +28,13 @@ def construct_prediction_intervals(test_preds, q):
     return torch.stack([lower, upper], dim=1)
 
 
-def cal_interval(train_y, calib_preds, calib_y, test_preds):
-    q = lscp_quantile(train_y, calib_preds, calib_y, num_bins=10, alpha=0.1)
-    intervals = construct_prediction_intervals(test_preds, q)
+def cal_calibration_interval(weight_dict, calib_preds, calib_y, train_preds):
+    q = lscp_quantile(weight_dict, calib_preds, calib_y, num_bins=10, alpha=0.1)
+    intervals = construct_prediction_intervals(train_preds, q)
+    return intervals
+
+
+def cal_interval(model, calib_x, calib_y, train_preds, weight_dict):
+    calib_pred = model(calib_x)
+    intervals = cal_calibration_interval(weight_dict, calib_pred, calib_y, train_preds)
     return intervals
