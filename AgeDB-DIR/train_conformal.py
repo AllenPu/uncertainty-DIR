@@ -180,7 +180,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
             interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
         elif args.conforma_LS:
             calib_x, calib_y, _ = cal_batch
-            interval = cal_interval(model, calib_x, calib_y, y_pred, train_weight_dict)
+            interval = cal_interval(model, calib_x.to(device), calib_y.to(device), y_pred, train_weight_dict)
         #######################
             
         interval = interval.expand_as(y)
