@@ -8,10 +8,8 @@ def lscp_quantile(weights, calib_preds, calib_targets, alpha=0.1):
 
     # 1. Compute residuals on calibration set
     residuals = torch.abs(calib_preds - calib_targets)
-
-
-    cal_weights = torch.Tensor([weights[l.item()] for l in calib_targets])
-    print('~~~cal weight~~~~~~', cal_weights.shape, calib_preds.shape)
+    cal_weights = torch.Tensor([weights[l.item()] for l in calib_targets]).cuda()
+    #print('~~~cal weight~~~~~~', cal_weights.shape, calib_preds.shape)
 
     # 2. Compute weighted quantile (1 - alpha coverage)
     sorted_residuals, sorted_idx = torch.sort(residuals)
