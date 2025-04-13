@@ -97,7 +97,7 @@ parser.add_argument('--feature_norm', action='store_true', help='if use the feat
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--MSE', action='store_true', help='only use  MSE or not')
 #
-parser.add_argument('--reweight', default='inverse', choices=['none', 'inv', 'sqrt_inv'], help='which reweight type? None, inverse, invers_sqrt')
+parser.add_argument('--reweight', default='inv', choices=['none', 'inv', 'sqrt_inv'], help='which reweight type? None, inverse, invers_sqrt')
 # to enable the LDS
 parser.add_argument('--smooth', default='lds', choices=['none', 'lds'], help='use lds to reweight or use equal weights')
 ### either CQR, LS
