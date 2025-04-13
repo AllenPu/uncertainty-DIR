@@ -122,7 +122,7 @@ def get_data_loader(args):
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
                           split='train', group_num=args.groups, reweight=args.reweight, smooth=args.smooth)
     #
-    train_weight_dict = train_dataset.get_shots()
+    train_weight_dict = train_dataset.get_weight_dict()
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
                         img_size=args.img_size, split='val', group_num=args.groups)
