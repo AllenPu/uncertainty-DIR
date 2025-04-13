@@ -331,6 +331,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
+        '''
         with open('vars_from_model' + output_file, "a+") as file:
             file.write(str(e)+" ")
             file.write(" ".join(results) + '\n')
@@ -340,6 +341,7 @@ if __name__ == '__main__':
             file.write(str(e)+" ")
             file.write(" ".join(pred_results) + '\n')
             file.close()
+        '''
         #   
         if e%20 == 0:
     # test final model
