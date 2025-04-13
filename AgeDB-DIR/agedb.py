@@ -76,13 +76,17 @@ class AgeDB(data.Dataset):
     # return a dictionary, key : label, value : corresponding  weights.
     # sometime redundent
     def get_weight_dict(self):
-        weight_label_dict = {}
+        num_label_dict, weight_label_dict = {}, {}
         labels = self.df['age'].values
-        print(f' length is the {len(labels)} weights length is {len(self.weights)}')
-        assert 1 == 2
-        for (w, l) in zip(self.weights, labels):
-            weight_label_dict[l] = weight_label_dict.get(l, int(w))
-        return weight_label_dict
+        #print(f'length is the {len(labels)} weights length is {len(self.weights)}')
+        for l in np.unique(labels):
+            num_label_dict[l] = num_label_dict.get(l, 0) + 1
+        for i in range(len(labels)):
+            l = labels[i]
+            if l not in weight_label_dict.keys():
+                weight_label_dict[l] = self.weights[i]
+        
+        return num_label_dict, weight_label_dict
 
     
 
