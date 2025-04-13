@@ -90,6 +90,7 @@ class AgeDB(data.Dataset):
         print('---------------')
         print(weight_label_dict)
         print('---------------')
+        assert 1==2
         
         return num_label_dict, weight_label_dict
 
