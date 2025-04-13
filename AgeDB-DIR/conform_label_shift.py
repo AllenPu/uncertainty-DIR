@@ -29,7 +29,7 @@ def construct_prediction_intervals(test_preds, q):
 
 
 def cal_calibration_interval(weight_dict, calib_preds, calib_y, train_preds):
-    q = lscp_quantile(weight_dict, calib_preds, calib_y, num_bins=10, alpha=0.1)
+    q = lscp_quantile(weight_dict, calib_preds, calib_y, alpha=0.1)
     intervals = construct_prediction_intervals(train_preds, q)
     return intervals
 
