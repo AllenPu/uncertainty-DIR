@@ -180,7 +180,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
             interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
         elif args.conforma_LS:
             calib_x, calib_y, _ = cal_batch
-            interval = cal_interval(model, calib_x.to(device), calib_y.to(device), y_pred, train_weight_dict)
+            interval = cal_interval(model, calib_x.to(device), calib_y.to(device), y_pred, reverse_train_dict)
         #######################
             
         interval = interval.expand_as(y)
@@ -303,6 +303,10 @@ if __name__ == '__main__':
     train_loader, test_loader, val_loader,  train_labels, train_num_dict, train_weight_dict = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
+    #
+    reverse_train_dict = {}
+    for k in train_num_dict.keys():
+        reverse_train_dict[k] = 1/train_num_dict[k]
     #
     maj, med, low = shot_count(train_labels)
     #
