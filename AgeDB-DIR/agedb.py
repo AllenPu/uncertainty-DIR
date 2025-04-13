@@ -85,6 +85,11 @@ class AgeDB(data.Dataset):
             l = labels[i]
             if l not in weight_label_dict.keys():
                 weight_label_dict[l] = self.weights[i]
+        print('---------------')
+        print(num_label_dict)
+        print('---------------')
+        print(weight_label_dict)
+        print('---------------')
         
         return num_label_dict, weight_label_dict
 
