@@ -21,7 +21,9 @@ def lscp_quantile(weights, calib_preds, calib_targets, alpha=0.1):
     return q
 
 
-
+#
+# q is the same length?
+#
 def construct_prediction_intervals(test_preds, q):
     lower = test_preds - q
     upper = test_preds + q
