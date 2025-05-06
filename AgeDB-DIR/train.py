@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, accuracy, shot_metric, setup_seed, balanced_metrics, shot_metric_balanced, uncertainty_accumulation, label_uncertainty_accumulation, per_label_mae, per_label_frobenius_norm
+from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm
 import torch
 from loss import *
 from network import *
@@ -178,7 +178,7 @@ def train_one_epoch(args, model, train_loader, opts):
     vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     #
     #mae_dict = per_label_mae(preds , labels)
-    mae_dict = per_label_frobenius_norm(z_, labels)
+    #mae_dict = per_label_frobenius_norm(z_, labels)
     ''''
     if args.MSE:
         # the variance from the model output
@@ -200,7 +200,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     '''
 
-    return model, mae_dict#vars_results_from_pred
+    return model#, mae_dict#vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -251,7 +251,10 @@ def test(model, test_loader, train_labels, args):
     #
     #mae_dict = per_label_mae(pred_, label_)
     mae_dict = per_label_frobenius_norm(z_, label_)
+    var_per_label = per_label_var(pred, labels)
+    mae_per_label = per_label_mae(pred, labels)
     #
+    assert 1 == 2
     return mae_pred.avg, shot_pred, gmean_pred, mae_dict
         # np.hstack(group), np.hstack(group_pred) #newly added
 
@@ -305,7 +308,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, mae_pred_tr = train_one_epoch(args, model, train_loader, opts)
+        model = train_one_epoch(args, model, train_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
@@ -331,6 +334,8 @@ if __name__ == '__main__':
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
             #
+            mae_pred, _, _, _  = test(model, train_loader, train_labels, args)
+            '''
             print("----------train-----------")
             list_key_tr = [k for k in mae_pred_tr.keys()]
             print(list_key_tr)
@@ -348,6 +353,7 @@ if __name__ == '__main__':
             list_results_te = [mae_pred_te[k] for k in mae_pred_te.keys()]
             #
             print(list_results_te)
+            '''
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     
 

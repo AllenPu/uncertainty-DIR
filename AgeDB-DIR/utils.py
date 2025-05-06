@@ -628,6 +628,14 @@ def per_label_mae(output, target):
         true_subset = target[mask].float()
         mae = torch.abs(pred_subset - true_subset).mean()
         mae_dict[int(label.item())] = mae.item()
+    all_labels, all_mae = [], []
+    for k in sorted(mae_dict.keys()):
+        all_labels.append(k)
+        all_mae.append(mae_dict[k])
+    print("-----all labels per mae-----")
+    print(all_labels)
+    print("-----all mae-----")
+    print(all_mae)
 
     return mae_dict
 
@@ -663,7 +671,7 @@ def per_label_frobenius_norm(features, labels):
 ####
 # return the variance of per label
 ###
-def per_label_var(preds, labels, train_labels):
+def per_label_var(preds, labels):
     label_to_preds = defaultdict(list)
     for pred, label in zip(preds, labels):
         label_to_preds[int(label.item())].append(pred.item())
@@ -671,6 +679,14 @@ def per_label_var(preds, labels, train_labels):
     for label, group_preds in label_to_preds.items():
         group_tensor = torch.tensor(group_preds)
         label_variance[label] = torch.var(group_tensor, unbiased=True)  # sample variance
-    for label in sorted(label_variance.keys()):
-        print(f"Label {label}: prediction variance = {label_variance[label].item():.4f}")
+    #
+    all_labels, all_vars = [], []
+    for k in sorted(label_variance.keys()):
+        all_labels.append(k)
+        all_vars.append(label_variance[k])
+    print('----labels in var per label-----')
+    print(all_labels)
+    print('-----vars per label-----')
+    print(all_vars)
+        #print(f"Label {label}: prediction variance = {label_variance[label].item():.4f}")
     return label_variance
