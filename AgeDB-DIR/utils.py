@@ -657,3 +657,20 @@ def per_label_frobenius_norm(features, labels):
         frob_norms[int(label.item())] = avg
 
     return frob_norms
+
+
+
+####
+# return the variance of per label
+###
+def per_label_var(preds, labels, train_labels):
+    label_to_preds = defaultdict(list)
+    for pred, label in zip(preds, labels):
+        label_to_preds[int(label.item())].append(pred.item())
+    label_variance = {}
+    for label, group_preds in label_to_preds.items():
+        group_tensor = torch.tensor(group_preds)
+        label_variance[label] = torch.var(group_tensor, unbiased=True)  # sample variance
+    for label in sorted(label_variance.keys()):
+        print(f"Label {label}: prediction variance = {label_variance[label].item():.4f}")
+    return label_variance
