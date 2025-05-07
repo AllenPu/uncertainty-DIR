@@ -631,7 +631,7 @@ def per_label_mae(output, target):
     all_labels, all_mae = [], []
     for k in sorted(mae_dict.keys()):
         all_labels.append(k)
-        all_mae.append(mae_dict[k].item())
+        all_mae.append(mae_dict[k])
     print("-----all labels per mae-----")
     print(all_labels)
     print("-----all mae-----")
