@@ -89,10 +89,13 @@ parser.add_argument('--output_file', type=str, default='result_')
 parser.add_argument('--scale', type=float, default=1, help='scale of the sharpness in soft label')
 #parser.add_argument('--diversity', type=float, default=0, help='scale of the diversity loss in regressor output')
 parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the diversity loss in z')
+parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
+#
+#
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
-parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
+#
 # MSE only, else NLL
 parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
 parser.add_argument('--MAE', action='store_true', help='only use MAE or not')
@@ -156,6 +159,7 @@ def train_one_epoch(args, model, train_loader, opts):
         elif args.MAE:
             nll_loss = torch.abs(y_pred - y)
         else:
+            # use beta NLL
             nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
         #
         if args.smooth  == 'lds':
