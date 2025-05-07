@@ -256,7 +256,7 @@ def test(model, test_loader, train_labels, args):
     #mae_dict = per_label_mae(pred_, label_)
     mae_dict = per_label_frobenius_norm(z_, label_)
     var_per_label = per_label_var(pred, labels)
-    mae_per_label = per_label_mae(pred, labels)
+    mae_per_label = per_label_mae(pred_, label_)
     #
     assert 1 == 2
     return mae_pred.avg, shot_pred, gmean_pred, mae_dict

@@ -631,7 +631,7 @@ def per_label_mae(output, target):
     all_labels, all_mae = [], []
     for k in sorted(mae_dict.keys()):
         all_labels.append(k)
-        all_mae.append(mae_dict[k])
+        all_mae.append(mae_dict[k].item())
     print("-----all labels per mae-----")
     print(all_labels)
     print("-----all mae-----")
@@ -683,7 +683,7 @@ def per_label_var(preds, labels):
     all_labels, all_vars = [], []
     for k in sorted(label_variance.keys()):
         all_labels.append(k)
-        all_vars.append(label_variance[k])
+        all_vars.append(label_variance[k].item())
     print('----labels in var per label-----')
     print(all_labels)
     print('-----vars per label-----')
