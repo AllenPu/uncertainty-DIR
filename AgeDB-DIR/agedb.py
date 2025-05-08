@@ -222,9 +222,9 @@ if __name__ == '__main__':
     df = pd.read_csv(os.path.join(dir, "agedb.csv"))
     df_train = df[df['split'] =='train']
     train_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
-                          split='train', reweight='none',  group_num=10, smooth='none')  
+                          split='train', reweight='inv',  group_num=10, smooth='none')  
     test_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
-                          split='test', reweight='none',  group_num=10, smooth='none') 
+                          split='test', reweight='inv',  group_num=10, smooth='none') 
     test_shot_dict = test_dataset.get_shots()
     print(test_shot_dict.keys())
     print('------------------------------------')
