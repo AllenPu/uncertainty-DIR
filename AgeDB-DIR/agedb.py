@@ -223,9 +223,10 @@ if __name__ == '__main__':
     dir = '/home/rpu2/scratch/data/imbalanced-regression/agedb-dir/data'
     df = pd.read_csv(os.path.join(dir, "agedb.csv"))
     df_train = df[df['split'] =='train']
+    df_test = df[df['split'] =='test']
     train_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
                           split='train', reweight='inv',  group_num=10, smooth='none')  
-    test_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
+    test_dataset = AgeDB(data_dir=dir, df=df_test, img_size=224,
                           split='test', reweight='inv',  group_num=10, smooth='none') 
     train_shot_dict = train_dataset.get_shots()
     test_shot_dict = test_dataset.get_shots()
