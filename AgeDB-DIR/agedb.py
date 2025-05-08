@@ -228,5 +228,5 @@ if __name__ == '__main__':
     test_shot_dict = test_dataset.get_shots()
     print(test_shot_dict.keys())
     print('------------------------------------')
-    shots = [i for i in test_shot_dict.keys()]
+    shots = [test_shot_dict[i] for i in test_shot_dict.keys()]
     print(shots)
