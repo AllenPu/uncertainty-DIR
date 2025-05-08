@@ -183,6 +183,7 @@ class AgeDB(data.Dataset):
         df = self.df
         train_labels = df['age']
         train_class_count = []
+        print(f'the len of the unique is {len(np.unique(train_labels))}')
         for l in np.unique(train_labels):
             train_class_count.append(len(
                 train_labels[train_labels == l]))
