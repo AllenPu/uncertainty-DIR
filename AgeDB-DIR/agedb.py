@@ -44,6 +44,7 @@ class AgeDB(data.Dataset):
         #
         # first reweight then judge if use LDS
         #
+
            
 
     def __len__(self):
@@ -203,7 +204,6 @@ class AgeDB(data.Dataset):
 
 
 
-
 class GaussianBlur(object):
     """Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
     def __init__(self, sigma=[.1, 2.]):
@@ -214,14 +214,19 @@ class GaussianBlur(object):
         x = x.filter(ImageFilter.GaussianBlur(radius=sigma))
         return x
 
+
+
+
 if __name__ == '__main__':
     dir = '/home/rpu2/scratch/data/imbalanced-regression/agedb-dir/data'
     df = pd.read_csv(os.path.join(dir, "agedb.csv"))
     df_train = df[df['split'] =='train']
     train_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
                           split='train', reweight='none',  group_num=10, smooth='none')  
-    train_shot_dict = train_dataset._get_shots()
-    print(train_shot_dict.keys())
+    test_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
+                          split='test', reweight='none',  group_num=10, smooth='none') 
+    test_shot_dict = test_dataset.get_shots()
+    print(test_shot_dict.keys())
     print('------------------------------------')
-    shots = [i for i in train_shot_dict.keys()]
+    shots = [i for i in test_shot_dict.keys()]
     print(shots)
