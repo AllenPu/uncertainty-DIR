@@ -258,7 +258,7 @@ def test(model, test_loader, train_labels, args):
     var_per_label = per_label_var(pred, labels)
     mae_per_label = per_label_mae(pred_, label_)
     #
-    assert 1 == 2
+    #
     return mae_pred.avg, shot_pred, gmean_pred, mae_dict
         # np.hstack(group), np.hstack(group_pred) #newly added
 
