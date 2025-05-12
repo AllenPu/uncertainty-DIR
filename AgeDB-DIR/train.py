@@ -324,12 +324,17 @@ if __name__ == '__main__':
             file.close()
         '''
         #
-        if e == args.epoch - 1 :
+        if e == 0 or e == args.epoch - 1:
+            print(f'================Epoch is {e}================')
+            _, _, _, _ = test(model, train_loader, train_labels, args)
+            print('================End Cal================')
+        if e == args.epoch - 1:
+            assert 1 == 2
             # test final model
             mae_pred, shot_pred, gmean_pred, mae_pred_te  = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
-            print(f' store name is {store_name}')
+            print(f' store name is {store_name} epoch is {e}')
             #
             print(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
                                                                              shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
