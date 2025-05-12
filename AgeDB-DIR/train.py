@@ -329,7 +329,7 @@ if __name__ == '__main__':
             _, _, _, _ = test(model, train_loader, train_labels, args)
             print('================End Cal================')
         if e == args.epoch - 1:
-            assert 1 == 2
+            #assert 1 == 2
             # test final model
             mae_pred, shot_pred, gmean_pred, mae_pred_te  = test(model, test_loader, train_labels, args)
             #
