@@ -177,7 +177,7 @@ class AgeDB(data.Dataset):
         return weights
     
     #
-    # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low
+    # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low, only validate in train
     #
     def get_shots(self):
         df = self.df

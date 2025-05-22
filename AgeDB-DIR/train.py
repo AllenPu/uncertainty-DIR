@@ -306,7 +306,7 @@ if __name__ == '__main__':
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
     #
-    opts = [opt_model]#, opt_mi] 
+    opts = [opt_model]#, opt_mi#] 
     #
     output_file = '_beta_' + str(args.beta) +  'MSE' + str(args.MSE) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
