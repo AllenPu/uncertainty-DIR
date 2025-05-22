@@ -41,8 +41,6 @@ parser.add_argument('--store_name', type=str, default='',
 parser.add_argument('--gpu', type=int, default=None)
 parser.add_argument('--optimizer', type=str, default='adam',
                     choices=['adam', 'sgd'], help='optimizer type')
-parser.add_argument('--loss', type=str, default='l1', choices=[
-                    'mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
 parser.add_argument('--lr', type=float, default=5e-5,
                     help='initial learning rate')
 parser.add_argument('--epoch', type=int, default=101,
@@ -54,25 +52,18 @@ parser.add_argument('--weight_decay', type=float,
 parser.add_argument('--schedule', type=int, nargs='*',
                     default=[60, 80], help='lr schedule (when to drop lr by 10x)')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size')
-parser.add_argument('--print_freq', type=int,
-                    default=10, help='logging frequency')
 parser.add_argument('--img_size', type=int, default=224,
                     help='image size used in training')
 parser.add_argument('--workers', type=int, default=32,
                     help='number of workers used in data loading')
 #
 parser.add_argument('--sigma', default=0.5, type=float)
-parser.add_argument('--la', action='store_true',
-                    help='if use logit adj to train the imbalance')
 parser.add_argument('--model_depth', type=int, default=50,
                     help='resnet 18 or resnnet 50')
 parser.add_argument('--init_noise_sigma', type=float,
                     default=1., help='initial scale of the noise')
 parser.add_argument('--tsne', type=bool, default=False,
                     help='draw tsne or not')
-parser.add_argument('--g_dis', action='store_true',
-                    help='if dynamically adjust the tradeoff')
-parser.add_argument('--gamma', type=float, default=5, help='tradeoff rate')
 #
 parser.add_argument('--groups', type=int, default=10,
                     help='number of split bins to the wole datasets')
@@ -86,19 +77,13 @@ parser.add_argument('--contra_ratio', type=float, help='ratio fo contrastive los
 parser.add_argument('--soft_label', action='store_true')
 parser.add_argument('--ce', action='store_true',  help='if use the cross_entropy /la or not')
 parser.add_argument('--output_file', type=str, default='result_')
-parser.add_argument('--scale', type=float, default=1, help='scale of the sharpness in soft label')
 #parser.add_argument('--diversity', type=float, default=0, help='scale of the diversity loss in regressor output')
 parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the diversity loss in z')
-parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 #
-#
-parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 #
-# MSE only, else NLL
-parser.add_argument('--MSE', action='store_true', help='only use MSE or not')
-parser.add_argument('--MAE', action='store_true', help='only use MAE or not')
+
 # first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
