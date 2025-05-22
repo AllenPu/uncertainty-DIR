@@ -177,8 +177,7 @@ class AgeDB(data.Dataset):
         return weights
     
     #
-    # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low, only validate in train
-    #
+    # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low
     def get_shots(self):
         df = self.df
         train_labels = df['age']
@@ -230,6 +229,6 @@ if __name__ == '__main__':
                           split='test', reweight='inv',  group_num=10, smooth='none') 
     train_shot_dict = train_dataset.get_shots()
     test_shot_dict = test_dataset.get_shots()
-    print('------------------------------------')
+    print('----------------the maj/med/low shot in train from the test is--------------------')
     shots = [train_shot_dict[i] for i in test_shot_dict.keys()]
     print(shots)
