@@ -230,7 +230,7 @@ def test(model, test_loader, train_labels, args):
     '''
     #
     #
-    return mae_pred.avg, shot_pred, gmean_pred, mae_dict
+    return mae_pred.avg, shot_pred, gmean_pred#, mae_dict
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
@@ -285,14 +285,10 @@ if __name__ == '__main__':
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
         #
-        if e == 0 or e == args.epoch - 1:
-            print(f'================Epoch is {e}================')
-            _, _, _, _ = test(model, train_loader, train_labels, args)
-            print('================End Cal================')
         if e == args.epoch - 1:
             #assert 1 == 2
             # test final model
-            mae_pred, shot_pred, gmean_pred, mae_pred_te  = test(model, test_loader, train_labels, args)
+            mae_pred, shot_pred, gmean_pred = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
             print(f' store name is {store_name} epoch is {e}')
@@ -304,5 +300,5 @@ if __name__ == '__main__':
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
             #
-            mae_pred, _, _, _  = test(model, train_loader, train_labels, args)
+            mae_pred, _, _  = test(model, train_loader, train_labels, args)
 
