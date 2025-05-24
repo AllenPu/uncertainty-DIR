@@ -267,7 +267,7 @@ if __name__ == '__main__':
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
-    maj, med, low = torch.tensor(maj), torch.tensor(med), torch.tesnor(low)
+    maj, med, low = torch.tensor(maj), torch.tensor(med), torch.tensor(low)
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
