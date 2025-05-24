@@ -151,11 +151,11 @@ def train_one_epoch(args, model, train_loader, opts):
         #print(f' y shape is  {y_output.shape}')
         #
         if maj_indices.numel() > 0:
-            maj_loss = torch.mean(torch.abs(y_pred[maj_indices] - y[maj_indices]))
+            maj_loss = torch.mean(torch.abs(y_pred[maj_indices] - y[maj_indices])**2)
         if med_indices.numel() > 0:
-            med_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices])**2)
+            med_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices]))
         if low_indices.numel() > 0:
-            low_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices])**2)
+            low_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices]))
         #
         #
         loss = maj_loss + med_loss + low_loss
