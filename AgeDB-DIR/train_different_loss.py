@@ -290,13 +290,12 @@ if __name__ == '__main__':
     for e in tqdm(range(args.epoch)):
         model, mae_dict = train_one_epoch(args, model, train_loader, opts)
         #
-        # record the prediction variance (from predicted labels) and model output variance respectively
-        #   
+        # record the prediction variance (from predicted labels) and model output variance respectively 
         #
         if e == args.epoch - 1:
             #
             print_mae(mae_dict)
-            #assert 1 == 2
+            #
             # test final model
             mae_pred, shot_pred, gmean_pred = test(model, test_loader, train_labels, args)
             #
