@@ -169,12 +169,12 @@ def train_one_epoch(args, model, train_loader, opts):
         pred_list.append(y_pred)
         z_list.append(z)
     #
-    #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
+    vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     #
-    #mae_dict = per_label_mae(preds , labels)
+    mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
 
-    return model#, mae_dict#vars_results_from_pred
+    return model, mae_dict#vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -253,7 +253,15 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
         f.write('---------------------------------------------------------------------\n')
         f.close()
 #############################
-
+def print_mae(mae_dict):
+    all_labels, all_mae = [], []
+    for k in sorted(mae_dict.keys()):
+        all_labels.append(k)
+        all_mae.append(mae_dict[k])
+    print("-----all labels per mae-----")
+    print(all_labels)
+    print("-----all mae-----")
+    print(all_mae)
 
 
 
@@ -280,12 +288,14 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(args, model, train_loader, opts)
+        model, mae_dict = train_one_epoch(args, model, train_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
-        #
+        #   
         #
         if e == args.epoch - 1:
+            #
+            print_mae(mae_dict)
             #assert 1 == 2
             # test final model
             mae_pred, shot_pred, gmean_pred = test(model, test_loader, train_labels, args)

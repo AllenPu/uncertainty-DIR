@@ -628,16 +628,10 @@ def per_label_mae(output, target):
         true_subset = target[mask].float()
         mae = torch.abs(pred_subset - true_subset).mean()
         mae_dict[int(label.item())] = mae.item()
-    all_labels, all_mae = [], []
-    for k in sorted(mae_dict.keys()):
-        all_labels.append(k)
-        all_mae.append(mae_dict[k])
-    print("-----all labels per mae-----")
-    print(all_labels)
-    print("-----all mae-----")
-    print(all_mae)
 
     return mae_dict
+
+
 
 
 #
