@@ -300,7 +300,7 @@ if __name__ == '__main__':
             mae_pred, shot_pred, gmean_pred = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
-            print(f' store name is {store_name} epoch is {e}')
+            print(f' Store name is {store_name} epoch is {e}')
             #
             print(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
                                                                              shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
