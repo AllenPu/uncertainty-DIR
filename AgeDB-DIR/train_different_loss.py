@@ -253,6 +253,7 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
         f.write('---------------------------------------------------------------------\n')
         f.close()
 #############################
+# print the mae result of per label from low to high
 def print_mae(mae_dict):
     all_labels, all_mae = [], []
     for k in sorted(mae_dict.keys()):
