@@ -155,7 +155,7 @@ def train_one_epoch(args, model, train_loader, opts):
         if med_indices.numel() > 0:
             med_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices]))
         if low_indices.numel() > 0:
-            low_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices]))
+            low_loss = torch.mean(torch.abs(y_pred[low_indices] - y[low_indices]))
         #
         #
         loss = maj_loss + med_loss + low_loss
