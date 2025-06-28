@@ -2,6 +2,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from scipy.stats import gaussian_kde
+from typing import Union, Callable
 from fast_soft_sort.pytorch_ops import soft_sort
 
 class DistLoss(nn.Module):
@@ -116,9 +118,7 @@ class HuberLoss(torch.nn.Module):
 # https://github.com/google-research/fast-soft-sort
 
 
-import numpy as np
-from scipy.stats import gaussian_kde
-from typing import Union, Callable
+
 
 def get_label_distribution(labels: np.ndarray, 
                            bw_method: Union[str, float, Callable[[gaussian_kde], float], None] = 0.5, 
