@@ -135,7 +135,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #
-        maj_loss, med_loss, low_loss = 0, 0, 0
+        loss = 0
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
@@ -143,24 +143,13 @@ def train_one_epoch(args, model, train_loader, opts):
         z, y_pred, var_pred = model(x)
         #
         #mse = F.mse_loss(y_pred, y, reduction='sum')
-        y_ = y.view(-1)
-        maj_mask = torch.isin(y_, maj)
-        med_mask = torch.isin(y_, med)
-        low_mask = torch.isin(y_, low)
-        maj_indices = torch.nonzero(maj_mask).squeeze()
-        med_indices = torch.nonzero(med_mask).squeeze()
-        low_indices = torch.nonzero(low_mask).squeeze()
-        #
-        #print(f' y shape is  {y_output.shape}')
-        #
-        if maj_indices.numel() > 0:
-            maj_loss = torch.mean(torch.abs(y_pred[maj_indices] - y[maj_indices]))
-        if med_indices.numel() > 0:
-            med_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices])**2)
-        if low_indices.numel() > 0:
-            low_loss = torch.mean(torch.abs(y_pred[low_indices] - y[low_indices])**2)
-        #
-        loss = maj_loss + med_loss + low_loss
+        if args.diff_loss:
+            loss = train_with_different_loss(y, y_pred)
+        elif args.dist_loss:
+            loss = train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
+        else:
+            # only MSE loss
+            loss = torch.nn.functional.mse_loss(y_pred, y)
         #
         opt_model.zero_grad()
         loss.backward()
@@ -269,7 +258,7 @@ def print_mae(mae_dict):
 
 
 
-def train_with_dist_loss(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1):
+def dist_loss_fn(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1):
     density = get_label_distribution(train_labels, bw_method, min_label, max_label, step)
     batch_theoretical_labels = get_batch_theoretical_labels(density, batch_size=128, min_label=min_label, step=step)
     batch_theoretical_labels = torch.tensor(batch_theoretical_labels, dtype=torch.float32).reshape(-1,1).cuda()
@@ -278,8 +267,14 @@ def train_with_dist_loss(train_labels, bw_method=0.5, min_label=0, max_label=120
 
 
 
+def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
+    loss = loss_fn(y_pred.type(torch.double), y.type(torch.double), batch_theoretical_labels.type(torch.double))
+    return loss
+
+
 # use MSE for majority while MAE for minority
 def train_with_different_loss(y, y_pred):
+    maj_loss, med_loss, low_loss = 0, 0, 0
     y_ = y.view(-1)
     maj_mask = torch.isin(y_, maj)
     med_mask = torch.isin(y_, med)
@@ -327,7 +322,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     if args.dist_loss:
-        theoretical_labels, dist_loss = train_with_dist_loss(train_labels=train_labels)
+        theoretical_labels, dist_loss = dist_loss_fn(train_labels=train_labels)
     #
     for e in tqdm(range(args.epoch)):
         model, mae_dict = train_one_epoch(args, model, train_loader, opts)
