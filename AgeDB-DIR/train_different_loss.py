@@ -84,7 +84,8 @@ parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the dive
 #
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
-#
+# which loss
+parser.add_argument('--diff_loss', action='store_true', help='use different loss for Maj or Min or not')
 parser.add_argument('--dist_loss', action='store_true', help='use dist loss or not')
 # first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
