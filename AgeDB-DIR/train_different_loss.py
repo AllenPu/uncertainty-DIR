@@ -17,7 +17,8 @@ from network import *
 import torch.optim as optim
 import time
 from scipy.stats import gmean
-from distloss import DistLoss
+from distloss import DistLoss,get_label_distribution, get_batch_theoretical_labels
+
 
 
 
@@ -84,7 +85,7 @@ parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the dive
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
 parser.add_argument('--feature_norm', action='store_true', help='if use the feature norm for train')
 #
-
+parser.add_argument('--dist_loss', action='store_true', help='use dist loss or not')
 # first reweight and then judge if we can use LDS
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
@@ -266,6 +267,42 @@ def print_mae(mae_dict):
 
 
 
+
+def train_with_dist_loss(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1):
+    density = get_label_distribution(train_labels, bw_method, min_label, max_label, step)
+    batch_theoretical_labels = get_batch_theoretical_labels(density, batch_size=128, min_label=min_label, step=step)
+    batch_theoretical_labels = torch.tensor(batch_theoretical_labels, dtype=torch.float32).reshape(-1,1).cuda()
+    loss_fn = DistLoss()
+    return batch_theoretical_labels, loss_fn
+
+
+
+# use MSE for majority while MAE for minority
+def train_with_different_loss(y, y_pred):
+    y_ = y.view(-1)
+    maj_mask = torch.isin(y_, maj)
+    med_mask = torch.isin(y_, med)
+    low_mask = torch.isin(y_, low)
+    maj_indices = torch.nonzero(maj_mask).squeeze()
+    med_indices = torch.nonzero(med_mask).squeeze()
+    low_indices = torch.nonzero(low_mask).squeeze()
+    #
+    #print(f' y shape is  {y_output.shape}')
+    #
+    if maj_indices.numel() > 0:
+        maj_loss = torch.mean(torch.abs(y_pred[maj_indices] - y[maj_indices]))
+    if med_indices.numel() > 0:
+        med_loss = torch.mean(torch.abs(y_pred[med_indices] - y[med_indices])**2)
+    if low_indices.numel() > 0:
+        low_loss = torch.mean(torch.abs(y_pred[low_indices] - y[low_indices])**2)
+    #
+    loss = maj_loss + med_loss + low_loss
+    #
+    return loss
+
+
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     setup_seed(args.seed)
@@ -287,6 +324,9 @@ if __name__ == '__main__':
     #
     output_file = 'dual_loss' + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
+    #
+    if args.dist_loss:
+        theoretical_labels, dist_loss = train_with_dist_loss(train_labels=train_labels)
     #
     for e in tqdm(range(args.epoch)):
         model, mae_dict = train_one_epoch(args, model, train_loader, opts)
