@@ -18,6 +18,7 @@ import torch.optim as optim
 import time
 from scipy.stats import gmean
 from distloss import DistLoss,get_label_distribution, get_batch_theoretical_labels
+from r2ccp_cp import *
 
 
 
@@ -123,20 +124,25 @@ def get_data_loader(args):
     print(f"Training data size: {len(train_dataset)}")
     print(f"Validation data size: {len(val_dataset)}")
     print(f"Test data size: {len(test_dataset)}")
-    return train_loader, val_loader, test_loader, train_labels
+    range_val = train_dataset.range_vals
+    return train_loader, val_loader, test_loader, train_labels, range_val
 
 
-def train_one_epoch(args, model, train_loader, opts):
+def train_one_epoch(args, model, train_loader, cal_loader, opts):
     model.train()
     #
     [opt_model] = opts
     #
     var_list, label_list, pred_list, z_list = [], [], [], []
     #
-    for idx, (x, y, w) in enumerate(train_loader):
+    infinite_cal_loader = itertools.cycle(cal_loader)
+    #
+    for train_batch, cal_batch in zip(train_loader, infinite_cal_loader):
         #
         loss = 0
         #print('shape is', x.shape, y.shape, g.shape)
+        x, y, w = train_batch
+        x_cal, y_cal, _ = cal_batch
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
         #
@@ -150,6 +156,10 @@ def train_one_epoch(args, model, train_loader, opts):
         else:
             # only MSE loss
             loss = torch.nn.functional.mse_loss(y_pred, y)
+        #
+        nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
+        #
+        loss += nll_loss
         #
         opt_model.zero_grad()
         loss.backward()
@@ -272,6 +282,14 @@ def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
     return loss
 
 
+def train_with_nll(x, y, y_pred, x_cal, y_cal):
+    # start for the intervals
+    #
+    var_pred = get_intervals(x, x_cal, y_cal, args, range_val, model)
+    nll_loss = beta_nll_loss(y_pred, var_pred, y, beta=0.5)
+    return nll_loss
+
+
 # use MSE for majority while MAE for minority
 def train_with_different_loss(y, y_pred):
     maj_loss, med_loss, low_loss = 0, 0, 0
@@ -304,7 +322,7 @@ if __name__ == '__main__':
     setup_seed(args.seed)
     store_name = ''
     #
-    train_loader, test_loader, val_loader,  train_labels = get_data_loader(args)
+    train_loader, test_loader, val_loader,  train_labels, range_val = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
     #
@@ -325,7 +343,7 @@ if __name__ == '__main__':
         theoretical_labels, dist_loss = dist_loss_fn(train_labels=train_labels)
     #
     for e in tqdm(range(args.epoch)):
-        model, mae_dict = train_one_epoch(args, model, train_loader, opts)
+        model, mae_dict = train_one_epoch(args, model, train_loader, val_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
         #
