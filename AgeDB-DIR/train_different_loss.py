@@ -18,8 +18,9 @@ import torch.optim as optim
 import time
 from scipy.stats import gmean
 from distloss import DistLoss,get_label_distribution, get_batch_theoretical_labels
-from r2ccp_cp import *
 import itertools
+from conform_cqr import *
+from conform_label_shift import *
 
 
 
@@ -125,8 +126,8 @@ def get_data_loader(args):
     print(f"Training data size: {len(train_dataset)}")
     print(f"Validation data size: {len(val_dataset)}")
     print(f"Test data size: {len(test_dataset)}")
-    range_val = train_dataset.range_vals
-    return train_loader, val_loader, test_loader, train_labels, range_val
+    train_num_dict, train_weight_dict = train_dataset.get_weight_dict()
+    return train_loader, val_loader, test_loader, train_labels, train_num_dict, train_weight_dict
 
 
 def train_one_epoch(args, model, train_loader, cal_loader, opts):
@@ -158,6 +159,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             # only MSE loss
             loss = torch.nn.functional.mse_loss(y_pred, y)
         #
+        # label shift conformal regression 
         nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
         #
         loss += nll_loss
@@ -286,8 +288,9 @@ def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
 def train_with_nll(x, y, y_pred, x_cal, y_cal):
     # start for the intervals
     #
-    var_pred = get_intervals(x, x_cal, y_cal, args, range_val, model)
-    nll_loss = beta_nll_loss(y_pred, var_pred, y, beta=0.5)
+    #  use "label shift conformal regression"
+    interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
+    nll_loss = beta_nll_loss(y_pred, interval, y, beta=0.5)
     return nll_loss
 
 
@@ -323,12 +326,15 @@ if __name__ == '__main__':
     setup_seed(args.seed)
     store_name = ''
     #
-    train_loader, test_loader, val_loader,  train_labels, range_val = get_data_loader(args)
+    train_loader, test_loader, val_loader,  train_labels, train_num_dict, train_weight_dict = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
     maj, med, low = torch.tensor(maj).to(device), torch.tensor(med).to(device), torch.tensor(low).to(device)
+    reverse_train_dict = {}
+    for k in train_num_dict.keys():
+        reverse_train_dict[k] = 1/train_num_dict[k]
     #
     model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     #
