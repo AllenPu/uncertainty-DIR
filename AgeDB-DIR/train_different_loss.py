@@ -145,7 +145,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         x, y, w = train_batch
         x_cal, y_cal, _ = cal_batch
         #
-        x, y, w  = x.to(device), y.to(device), w.to(device)
+        x, y, w, x_cal, y_cal  = x.to(device), y.to(device), w.to(device), x_cal.to(device), y_cal.to(device)
         #
         z, y_pred, var_pred = model(x)
         #
