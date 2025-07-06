@@ -39,6 +39,6 @@ def cal_calibration_interval(weight_dict, calib_preds, calib_y, train_preds):
 
 def cal_interval(model, calib_x, calib_y, train_preds, weight_dict):
     #calib_pred, _, _，_ = model(calib_x)
-    calib_pred, _, _ = model(calib_x)
+    _, calib_pred, _ = model(calib_x)
     intervals = cal_calibration_interval(weight_dict, calib_pred, calib_y, train_preds)
     return intervals
