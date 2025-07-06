@@ -19,7 +19,7 @@ def beta_nll_loss(mean, variance, target, beta=0.5):
     #
     #variance = reverse_ent_to_var(ent)
     #
-    print(f' target {target.shape}, mean {mean.shape}, var {variance.shape}')
+    #print(f' target {target.shape}, mean {mean.shape}, var {variance.shape}')
     loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
         #print('loss before', loss[:10])
     if beta > 0:
