@@ -15,7 +15,7 @@ def lscp_quantile(weights, calib_preds, calib_targets, alpha=0.1):
     sorted_weights = cal_weights[sorted_idx]
     cum_weights = torch.cumsum(sorted_weights, dim=0)
     cutoff = (1 - alpha) * cum_weights[-1]
-    cutoff = cutoff.view(cum_weights.shape)
+    cutoff = cutoff.expand(cum_weights.shape[0], -1)
     #print(f' cum weight shape {cum_weights.shape} cutoff {cutoff.shape}')
     idx = torch.searchsorted(cum_weights, cutoff)
     q = sorted_residuals[min(idx, len(sorted_residuals)-1)]
