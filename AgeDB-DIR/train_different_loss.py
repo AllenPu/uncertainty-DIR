@@ -291,7 +291,7 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
     #  use "label shift conformal regression"
     interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
     #interval = interval.expand_as(y)
-    intervals = torch.abs(interval[:, 0] - interval[:,1])
+    intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
     nll_loss = beta_nll_loss(y_pred, intervals, y, beta=0.5)
     return nll_loss
 
