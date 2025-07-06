@@ -118,7 +118,7 @@ def get_data_loader(args):
                          img_size=args.img_size, split='test', group_num=args.groups)
     #
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.workers, pin_memory=True, drop_last=False)
+                              num_workers=args.workers, pin_memory=True, drop_last=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                             num_workers=args.workers, pin_memory=True, drop_last=False)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
