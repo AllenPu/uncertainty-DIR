@@ -12,7 +12,9 @@ def percentile_excluding_index(vector, percentile):
 # input is x and model itself
 #
 def get_scores(X, model):
-    scores = torch.nn.functional.softmax(model(torch.tensor(X, dtype=torch.float32)), dim=1)
+    # revised to adapt to the model putput
+    _, y_pred, _ = model(torch.tensor(X, dtype=torch.float32))
+    scores = torch.nn.functional.softmax(y_pred, dim=1)
     return scores
 
 #
