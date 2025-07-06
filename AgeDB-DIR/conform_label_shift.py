@@ -13,11 +13,12 @@ def lscp_quantile(weights, calib_preds, calib_targets, alpha=0.1):
     # 2. Compute weighted quantile (1 - alpha coverage)
     sorted_residuals, sorted_idx = torch.sort(residuals)
     sorted_weights = cal_weights[sorted_idx]
+    print(f' shape of the cumsum {sorted_weights.shape}')
     cum_weights = torch.cumsum(sorted_weights, dim=0)
     cutoff = (1 - alpha) * cum_weights[-1]
     #cutoff = cutoff.expand(cum_weights.shape[0], -1)
     #print(f' cum weight shape {cum_weights.shape} cutoff {cutoff.shape}')
-    idx = torch.searchsorted(cum_weights, cutoff)
+    idx = torch.searchsorted(cum_weights.unsquueze(-1), cutoff)
     #print(f' idx {min(idx, len(sorted_residuals)-1)}')
     q = sorted_residuals[min(idx, len(sorted_residuals)-1)]
 
