@@ -94,6 +94,7 @@ parser.add_argument('--dist_loss', action='store_true', help='use dist loss or n
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
+parser.add_argument('--nll', action=False, help='if you try to use the  nll los with interrval or not')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -289,9 +290,12 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
     # start for the intervals
     #
     #  use "label shift conformal regression"
-    interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
-    #interval = interval.expand_as(y)
-    intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
+    if args.nll:
+        interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
+        #interval = interval.expand_as(y)
+        intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
+    else:
+        intervals = torch.ones(y.shape)
     #print(f' interval shape {intervals.shape}')
     nll_loss = beta_nll_loss(y_pred, intervals, y, beta=0.5)
     return torch.mean(nll_loss)
@@ -374,5 +378,5 @@ if __name__ == '__main__':
                                                                          shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
             print('---------------------------------------------------------------------\n')
             #
-            mae_pred, _, _  = test(model, train_loader, train_labels, args)
+            #mae_pred, _, _  = test(model, train_loader, train_labels, args)
 
