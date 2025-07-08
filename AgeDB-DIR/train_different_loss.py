@@ -94,7 +94,7 @@ parser.add_argument('--dist_loss', action='store_true', help='use dist loss or n
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
-parser.add_argument('--nll', action=True, help='if you try to use the  nll los with interrval or not')
+parser.add_argument('--nll', action='store_true', help='if you try to use the  nll los with interrval or not')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
