@@ -295,7 +295,7 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
         #interval = interval.expand_as(y)
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
     else:
-        intervals = torch.ones(y.shape)
+        intervals = torch.ones(y.shape).to(device)
     #print(f' interval shape {intervals.shape}')
     nll_loss = beta_nll_loss(y_pred, intervals, y, beta=0.5)
     return torch.mean(nll_loss)
