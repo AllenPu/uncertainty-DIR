@@ -95,6 +95,7 @@ parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqr
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
 parser.add_argument('--nll', action='store_true', help='if you try to use the  nll los with interrval or not')
+parser.add_argument('--beta', default=0.5, help='beta for nll, 0.5 is beta-nll, 1 is MSE')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -294,10 +295,12 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
         interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
         #interval = interval.expand_as(y)
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
+        beta = args.beta
     else:
         intervals = torch.ones(y.shape).to(device)
+        beta = 1
     #print(f' interval shape {intervals.shape}')
-    nll_loss = beta_nll_loss(y_pred, intervals, y, beta=0.5)
+    nll_loss = beta_nll_loss(y_pred, intervals, y, beta=beta)
     return torch.mean(nll_loss)
 
 
