@@ -153,6 +153,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         z, y_pred, var_pred = model(x)
         #
         #mse = F.mse_loss(y_pred, y, reduction='sum')
+        # different loss in different label
         if args.diff_loss:
             loss = train_with_different_loss(y, y_pred)
         elif args.dist_loss:
