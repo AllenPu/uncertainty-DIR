@@ -276,7 +276,7 @@ def print_mae(mae_dict):
 
 def dist_loss_fn(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1):
     density = get_label_distribution(train_labels, bw_method, min_label, max_label, step)
-    batch_theoretical_labels = get_batch_theoretical_labels(density, batch_size=256, min_label=min_label, step=step)
+    batch_theoretical_labels = get_batch_theoretical_labels(density, batch_size=args.batch_size, min_label=min_label, step=step)
     batch_theoretical_labels = torch.tensor(batch_theoretical_labels, dtype=torch.float32).reshape(-1,1).cuda()
     loss_fn = DistLoss()
     return batch_theoretical_labels, loss_fn
