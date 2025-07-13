@@ -158,14 +158,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             loss = train_with_different_loss(y, y_pred)
         elif args.dist_loss:
             loss = train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
-        else:
+        else: # label shift conformal regression or MSE
             # only MSE loss
-            loss = torch.nn.functional.mse_loss(y_pred, y)
+            loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
         #
         # label shift conformal regression 
-        nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
-        #
-        loss += nll_loss
+        #nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
         #
         opt_model.zero_grad()
         loss.backward()
@@ -298,6 +296,7 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
         beta = args.beta
     else:
+        # train with MSE
         intervals = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {intervals.shape}')
