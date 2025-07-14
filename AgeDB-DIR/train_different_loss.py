@@ -63,7 +63,7 @@ parser.add_argument('--workers', type=int, default=32,
                     help='number of workers used in data loading')
 #
 parser.add_argument('--sigma', default=0.5, type=float)
-parser.add_argument('--model_depth', type=int, default=50,
+parser.add_argument('--model_depth', type=int, default=18,
                     help='resnet 18 or resnnet 50')
 parser.add_argument('--init_noise_sigma', type=float,
                     default=1., help='initial scale of the noise')
@@ -150,7 +150,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         x, y, w, x_cal, y_cal  = x.to(device), y.to(device), w.to(device), x_cal.to(device), y_cal.to(device)
         #
-        z, y_pred, var_pred = model(x)
+        y_pred, z = model(x)
         #
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         # different loss in different label
@@ -202,7 +202,7 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            z, y_pred, var_pred = model(x)
+            y_pred, z = model(x)
             #
             mae_y = torch.mean(torch.abs(y_pred- y))
             mse_y_pred = F.mse_loss(y_pred, y)
@@ -346,7 +346,8 @@ if __name__ == '__main__':
     for k in train_num_dict.keys():
         reverse_train_dict[k] = 1/train_num_dict[k]
     #
-    model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    #model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    model = ResNet_regression(args)
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
