@@ -159,7 +159,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         elif args.dist_loss:
             loss = train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
         else:   # label shift conformal regression or MSE
-                # --nll
+                # --nll is used for NLL loss otherwise MSE
             loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
         #
         # label shift conformal regression 
