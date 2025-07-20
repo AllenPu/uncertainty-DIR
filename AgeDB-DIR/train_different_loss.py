@@ -160,10 +160,11 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             loss += train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
         # label shift conformal regression or MSE
         # --nll is used for NLL loss otherwise MSE
-        loss += train_with_nll(y, y_pred, x_cal, y_cal)
+        nll_loss, nll, dp_loss = train_with_nll(y, y_pred, x_cal, y_cal, e)
         #
         # label shift conformal regression 
-        #nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
+        # nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
+        loss += nll_loss
         #
         opt_model.zero_grad()
         loss.backward()
@@ -173,6 +174,9 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         label_list.append(y)
         pred_list.append(y_pred)
         z_list.append(z)
+        #
+    mse = torch.mean((y - y_pred)**2)
+    print(f'mse is {mse.item()} nll is {nll.item()} dp loss is {dp_loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     labels, preds, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
@@ -288,7 +292,7 @@ def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
     return loss
 
 
-def train_with_nll(y, y_pred, x_cal, y_cal):
+def train_with_nll(y, y_pred, x_cal, y_cal, e):
     # start for the intervals
     #
     #  use "label shift conformal regression"
@@ -304,14 +308,17 @@ def train_with_nll(y, y_pred, x_cal, y_cal):
         # add max differential entropy H(y)
         if args.max_dp:
             dp = torch.log(2*torch.pi*var_pred)
-            nll_loss += torch.neg(torch.mean(dp))
+            dp_loss = torch.neg(torch.mean(dp))
+            nll_loss += dp_loss
     else:
         # train with MSE
         var_pred = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {intervals.shape}')
-    nll_loss += torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta))
-    return nll_loss
+    nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
+    nll += nll_loss
+    #
+    return nll_loss, nll, dp_loss
 
 
 # use MSE for majority while MAE for minority
@@ -375,7 +382,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
         #
-        if e == args.epoch - 1:
+        if e == args.epoch - 1 or e == 0:
             #
             print_mae(mae_dict)
             #
