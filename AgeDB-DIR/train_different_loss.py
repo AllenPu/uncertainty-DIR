@@ -356,7 +356,7 @@ if __name__ == '__main__':
         reverse_train_dict[k] = 1/train_num_dict[k]
     #
     #model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
-    model = ResNet_regression(args)
+    model = ResNet_regression(args).to(device)
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
