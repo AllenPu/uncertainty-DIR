@@ -143,7 +143,7 @@ class Guassian_uncertain_ResNet(nn.Module):
         mean, var = self.guassian_head(feat)
     
         # feature, mean, variance
-        return feat, mean ,var
+        return feat, mean, var
     
 
 

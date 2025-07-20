@@ -150,7 +150,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
         x, y, w, x_cal, y_cal  = x.to(device), y.to(device), w.to(device), x_cal.to(device), y_cal.to(device)
         #
-        y_pred, z = model(x)
+        z, y_pred, var_pred = model(x)
         #
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         # different loss in different label
@@ -203,7 +203,7 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            y_pred, z = model(x)
+            z, y_pred, var_pred = model(x)
             #
             mae_y = torch.mean(torch.abs(y_pred- y))
             mse_y_pred = F.mse_loss(y_pred, y)
@@ -283,7 +283,7 @@ def dist_loss_fn(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1
 
 
 def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
-    print(f'====y_pred shape {y_pred.shape}==============y shape {y.shape}')
+    #print(f'====y_pred shape {y_pred.shape}==============y shape {y.shape}')
     loss = loss_fn(y_pred.type(torch.double), y.type(torch.double), batch_theoretical_labels.type(torch.double))
     return loss
 
@@ -356,8 +356,8 @@ if __name__ == '__main__':
     for k in train_num_dict.keys():
         reverse_train_dict[k] = 1/train_num_dict[k]
     #
-    #model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
-    model = ResNets(args).to(device)
+    model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    #model = ResNets(args).to(device)
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
