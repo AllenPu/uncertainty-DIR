@@ -310,8 +310,8 @@ def train_with_nll(y, y_pred, x_cal, y_cal):
         var_pred = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {intervals.shape}')
-    nll_loss += beta_nll_loss(y_pred, var_pred, y, beta=beta)
-    return torch.mean(nll_loss)
+    nll_loss += torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta))
+    return nll_loss
 
 
 # use MSE for majority while MAE for minority
