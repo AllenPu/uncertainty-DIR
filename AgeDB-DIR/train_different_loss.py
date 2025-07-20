@@ -155,12 +155,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         # different loss in different label
         if args.diff_loss:
-            loss = train_with_different_loss(y, y_pred)
+            loss += train_with_different_loss(y, y_pred)
         elif args.dist_loss:
-            loss = train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
-        else:   # label shift conformal regression or MSE
-                # --nll is used for NLL loss otherwise MSE
-            loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
+            loss += train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
+        # label shift conformal regression or MSE
+        # --nll is used for NLL loss otherwise MSE
+        loss += train_with_nll(y, y_pred, x_cal, y_cal)
         #
         # label shift conformal regression 
         #nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
@@ -287,7 +287,7 @@ def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
     return loss
 
 
-def train_with_nll(x, y, y_pred, x_cal, y_cal):
+def train_with_nll(y, y_pred, x_cal, y_cal):
     # start for the intervals
     #
     #  use "label shift conformal regression"
