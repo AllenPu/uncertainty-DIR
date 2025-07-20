@@ -299,7 +299,7 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
         beta = args.beta
         # add max differential entropy H(y)
-        nll_loss += torch.mean(intervals)
+        nll_loss += torch.neg(torch.mean(intervals))
     else:
         # train with MSE
         intervals = torch.ones(y.shape).to(device)
