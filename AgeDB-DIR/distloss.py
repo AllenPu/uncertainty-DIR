@@ -57,7 +57,7 @@ class DistLoss(nn.Module):
         sorted_inp = soft_sort(inp.reshape(1, -1).cpu(), regularization_strength=self.regularization_strength)
         sorted_inp = sorted_inp.reshape(-1, 1).cuda()
         #
-        print(f'sort inp shape is {sorted_inp.shape} theoretical shape is {theoretical_labels.shape}')
+        #print(f'sort inp shape is {sorted_inp.shape} theoretical shape is {theoretical_labels.shape}')
 
         # Compute the distribution loss using the specified loss function
         dist_loss = self.loss_fn(sorted_inp, theoretical_labels)

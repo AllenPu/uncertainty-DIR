@@ -283,6 +283,7 @@ def dist_loss_fn(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1
 
 
 def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
+    print(f'====y_pred shape {y_pred.shape}==============y shape {y.shape}')
     loss = loss_fn(y_pred.type(torch.double), y.type(torch.double), batch_theoretical_labels.type(torch.double))
     return loss
 
