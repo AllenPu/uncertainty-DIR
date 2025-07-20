@@ -96,7 +96,7 @@ parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqr
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
 parser.add_argument('--nll', action='store_true', help='if you try to use the  nll los with interrval or not')
 parser.add_argument('--beta', default=0.5, help='beta for nll, 0.5 is beta-nll, 1 is MSE')
-#
+parser.add_argument('--max_dp', action='store_true', help='maxmize differential entropy')
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -299,7 +299,8 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
         beta = args.beta
         # add max differential entropy H(y)
-        nll_loss += torch.neg(torch.mean(intervals))
+        if args.max_dp:
+            nll_loss += torch.neg(torch.mean(intervals))
     else:
         # train with MSE
         intervals = torch.ones(y.shape).to(device)
