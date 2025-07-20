@@ -296,17 +296,20 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
     if args.nll:
         interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
         #interval = interval.expand_as(y)
-        intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
+        interval = torch.abs(interval[:, 0, ] - interval[:,1,])
+        #
+        var_pred = interval**2
         beta = args.beta
         # add max differential entropy H(y)
         if args.max_dp:
-            nll_loss += torch.neg(torch.mean(intervals))
+            dp = torch.log(2*torch.pi*var_pred)
+            nll_loss += torch.neg(torch.mean(dp))
     else:
         # train with MSE
-        intervals = torch.ones(y.shape).to(device)
+        var_pred = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {intervals.shape}')
-    nll_loss += beta_nll_loss(y_pred, intervals, y, beta=beta)
+    nll_loss += beta_nll_loss(y_pred, var_pred, y, beta=beta)
     return torch.mean(nll_loss)
 
 
