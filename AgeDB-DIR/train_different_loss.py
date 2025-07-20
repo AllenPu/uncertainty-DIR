@@ -296,7 +296,7 @@ def train_with_nll(y, y_pred, x_cal, y_cal, e):
     # start for the intervals
     #
     #  use "label shift conformal regression"
-    nll_loss = 0
+    nll_loss, dp_loss = 0, 0
     # 
     if args.nll:
         interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
