@@ -169,12 +169,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         loss.backward()
         opt_model.step()
         #
-        var_list.append(var_pred)
+        #var_list.append(var_pred)
         label_list.append(y)
         pred_list.append(y_pred)
         z_list.append(z)
     #
-    vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
+    #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
+    labels, preds, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     #
     mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
@@ -271,7 +272,7 @@ def print_mae(mae_dict):
 
 
 
-
+# align the p(y) with distloss
 def dist_loss_fn(train_labels, bw_method=0.5, min_label=0, max_label=120, step=1):
     density = get_label_distribution(train_labels, bw_method, min_label, max_label, step)
     batch_theoretical_labels = get_batch_theoretical_labels(density, batch_size=args.batch_size, min_label=min_label, step=step)
@@ -290,17 +291,21 @@ def train_with_nll(x, y, y_pred, x_cal, y_cal):
     # start for the intervals
     #
     #  use "label shift conformal regression"
+    nll_loss = 0
+    # 
     if args.nll:
         interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
         #interval = interval.expand_as(y)
         intervals = torch.abs(interval[:, 0, ] - interval[:,1,])
         beta = args.beta
+        # add max differential entropy H(y)
+        nll_loss += torch.mean(intervals)
     else:
         # train with MSE
         intervals = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {intervals.shape}')
-    nll_loss = beta_nll_loss(y_pred, intervals, y, beta=beta)
+    nll_loss += beta_nll_loss(y_pred, intervals, y, beta=beta)
     return torch.mean(nll_loss)
 
 
