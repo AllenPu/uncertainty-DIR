@@ -160,7 +160,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             loss += dis_loss
         # label shift conformal regression or MSE
         # --nll is used for NLL loss otherwise MSE
-        nll_loss, nll, dp_loss = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
+        addtion_loss, dp_loss, nll = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
         #
         # label shift conformal regression 
         # nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
@@ -176,7 +176,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         z_list.append(z)
         #
     mse = torch.mean((y - y_pred)**2)
-    print(f'mse is {mse.item()} nll is {nll.item()} interval loss {nll_loss.item()} dp loss is {dp_loss} loss is {loss.item()} dist loss {dis_loss.item()}')
+    print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     labels, preds, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
@@ -296,11 +296,11 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     # start for the intervals
     #
     #  use "label shift conformal regression"
-    nll_loss, dp_loss = 0, 0
+    addtion_loss, dp_loss = 0, 0
     # 
     if args.nll:
         upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
-        nll_loss += upper_lower_loss
+        addtion_loss += upper_lower_loss
         #
         interval_q = abs_err_ls(model, cal_batch, train_weight_dict,  tau=args.tau, e=e)
         interval = torch.abs(y_upper - y_lower + 2*interval_q)
@@ -313,16 +313,16 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         if args.max_dp:
             dp = torch.log(2*torch.pi*var_pred)
             dp_loss = torch.neg(torch.mean(dp))
-            nll_loss += dp_loss
+            addtion_loss += dp_loss
     else:
         # train with MSE
         var_pred = torch.ones(y.shape).to(device)
         beta = 1
     #print(f' interval shape {interval.shape} y shape {y.shape}')
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
-    nll += nll_loss
+    nll += addtion_loss
     #
-    return nll_loss, nll, dp_loss
+    return addtion_loss, dp_loss, nll
 
 
 # use MSE for majority while MAE for minority
