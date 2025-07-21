@@ -74,7 +74,7 @@ parser.add_argument('--groups', type=int, default=10,
                     help='number of split bins to the wole datasets')
 #
 parser.add_argument('--tau', default=0.1, type=float,
-                    help=' tau for logit adjustment ')
+                    help=' tau for coverage')
 parser.add_argument('--ranked_contra', action='store_true')
 parser.add_argument('--temp', type=float, help='temperature for contrastive loss', default=0.07)
 parser.add_argument('--contra_ratio', type=float, help='ratio fo contrastive loss', default=1)
@@ -147,7 +147,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #print('shape is', x.shape, y.shape, g.shape)
         x, y, w = train_batch
         #
-        x, y, w,  = x.to(device), y.to(device), w.to(device)
+        x, y, w  = x.to(device), y.to(device), w.to(device)
         #
         y_pred, y_lower, y_upper, z = model(x)
         #mse = F.mse_loss(y_pred, y, reduction='sum')
@@ -176,7 +176,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         z_list.append(z)
         #
     mse = torch.mean((y - y_pred)**2)
-    print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
+    print(f'mse is {mse.item()}  interval loss {addtion_loss.item()}')
+    #print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     labels, preds, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
