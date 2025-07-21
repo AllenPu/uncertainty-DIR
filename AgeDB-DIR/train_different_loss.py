@@ -309,7 +309,6 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         #interval = torch.abs(interval[:, 0, ] - interval[:,1,])
         #
         var_pred = interval**2
-        beta = args.beta
         # add max differential entropy H(y)
         if args.max_dp:
             dp = torch.log(2*torch.pi*var_pred)
@@ -318,7 +317,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     else:
         # train with MSE
         var_pred = torch.ones(y.shape).to(device)
-        beta = 1
+    beta = args.beta
     #print(f' interval shape {interval.shape} y shape {y.shape}')
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
     nll += addtion_loss
