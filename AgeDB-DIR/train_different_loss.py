@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm
+from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm, adjust_learning_rate
 import torch
 from loss import *
 from network import *
@@ -383,6 +383,7 @@ if __name__ == '__main__':
         theoretical_labels, dist_loss = dist_loss_fn(train_labels=train_labels)
     #
     for e in tqdm(range(args.epoch)):
+        adjust_learning_rate(opt_model, e, args)
         model, mae_dict = train_one_epoch(args, model, train_loader, val_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
