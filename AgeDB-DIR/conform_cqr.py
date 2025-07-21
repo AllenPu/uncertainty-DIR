@@ -34,6 +34,24 @@ def abs_err(model, cal_batch, train_weight_dict={}, tau=0.1, e=1):
     return interval
 
 
+# under label shift, just return the value of q
+def abs_err_ls(model, cal_batch, train_weight_dict={}, tau=0.1, e=1):
+    model.eval()
+    device = next(model.parameters()).device
+    with torch.no_grad():
+        #print(cal_batch)
+        x, y, _ = cal_batch
+        #for idx, (x, _, w) in enumerate(loader):
+        x = x.to(device)
+        y_pred, lower, upper, _ = model(x)
+        #lower, upper  =  torch.abs(lower) , torch.abs(upper)
+        err = torch.max(lower - y_pred, y_pred - upper)
+        #
+        abs_err, _ = torch.sort(err, dim=0)
+        idx = int((1-tau)*abs_err.shape[0])
+        q = abs_err[idx]
+    return q
+
 # low is the lower tau prediction
 # high
 

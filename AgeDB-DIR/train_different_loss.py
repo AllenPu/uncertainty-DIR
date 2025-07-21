@@ -300,7 +300,8 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
         nll_loss += upper_lower_loss
         #
-        interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
+        interval_q = abs_err_ls(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
+        interval = torch.abs(y_upper - y_lower + 2*interval_q)
         #interval = interval.expand_as(y)
         #interval = torch.abs(interval[:, 0, ] - interval[:,1,])
         #
@@ -315,7 +316,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         # train with MSE
         var_pred = torch.ones(y.shape).to(device)
         beta = 1
-    print(f' interval shape {interval.shape} y shape {y.shape}')
+    #print(f' interval shape {interval.shape} y shape {y.shape}')
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
     nll += nll_loss
     #
