@@ -391,7 +391,7 @@ if __name__ == '__main__':
         #
         if e == args.epoch - 1 or e == 0:
             #
-            print_mae(mae_dict)
+            #print_mae(mae_dict)
             #
             # test final model
             mae_pred, shot_pred, gmean_pred = test(model, test_loader, train_labels, args)
