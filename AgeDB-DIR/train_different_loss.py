@@ -315,7 +315,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         # train with MSE
         var_pred = torch.ones(y.shape).to(device)
         beta = 1
-    #print(f' interval shape {intervals.shape}')
+    print(f' interval shape {interval.shape} y shape {y.shape}')
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
     nll += nll_loss
     #
