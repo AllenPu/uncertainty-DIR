@@ -6,7 +6,7 @@ import torch
 # tau is a fixed number for estimating the upper and lower bound
 # train_weight_dict : a dictionary, key :label, value : weight in training
 #
-def abs_err(model, cal_batch, train_weight_dict, tau, e):
+def abs_err(model, cal_batch, train_weight_dict={}, tau=0.1, e=1):
     model.eval()
     device = next(model.parameters()).device
     with torch.no_grad():
@@ -18,18 +18,12 @@ def abs_err(model, cal_batch, train_weight_dict, tau, e):
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
         err = torch.max(lower - y_pred, y_pred - upper)
         #nans =  torch.where(torch.isnan(err) == True)[0].tolist()
-        #if e == 14:
-        #    err_ = err.squeeze(-1)
-        #    print(len(nans))
-        #    for e in nans:
-                #
-        #        print(f' y is {y[e]} y pred is {y_pred[e]} upper {upper[e]} lower {lower[e]} err is {err_[e]}')
-        #        break
+        #I removed this part for simple :
         #
-        element = [train_weight_dict[x.item()] for x in y]
-        w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)
-        #print(f" the shape of w is {w.shape}, the shape of err is {err.shape}")
-        err *= w.to(device)
+        if len(train_weight_dict.keys()) > 0:
+           element = [train_weight_dict[x.item()] for x in y]
+           w = torch.tensor(element, dtype=torch.long).unsqueeze(-1)
+           err *= w.to(device)
         #
         abs_err, _ = torch.sort(err, dim=0)
         idx = int((1-tau)*abs_err.shape[0])

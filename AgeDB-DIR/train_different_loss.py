@@ -146,12 +146,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         loss = 0
         #print('shape is', x.shape, y.shape, g.shape)
         x, y, w = train_batch
-        x_cal, y_cal, _ = cal_batch
         #
-        x, y, w, x_cal, y_cal  = x.to(device), y.to(device), w.to(device), x_cal.to(device), y_cal.to(device)
+        x, y, w,  = x.to(device), y.to(device), w.to(device)
         #
-        z, y_pred, var_pred = model(x)
-        #
+        y_pred, y_lower, y_upper, z = model(x)
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         # different loss in different label
         if args.diff_loss:
@@ -160,7 +158,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             loss += train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
         # label shift conformal regression or MSE
         # --nll is used for NLL loss otherwise MSE
-        nll_loss, nll, dp_loss = train_with_nll(y, y_pred, x_cal, y_cal, e)
+        nll_loss, nll, dp_loss = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
         #
         # label shift conformal regression 
         # nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
@@ -207,7 +205,7 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            z, y_pred, var_pred = model(x)
+            y_pred, y_lower, y_upper, z = model(x)
             #
             mae_y = torch.mean(torch.abs(y_pred- y))
             mse_y_pred = F.mse_loss(y_pred, y)
@@ -292,16 +290,19 @@ def train_with_dist_loss(y, y_pred, batch_theoretical_labels, loss_fn):
     return loss
 
 
-def train_with_nll(y, y_pred, x_cal, y_cal, e):
+def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     # start for the intervals
     #
     #  use "label shift conformal regression"
     nll_loss, dp_loss = 0, 0
     # 
     if args.nll:
-        interval = cal_interval(model, x_cal, y_cal, y_pred, reverse_train_dict)
+        upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
+        nll_loss += upper_lower_loss
+        #
+        interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
         #interval = interval.expand_as(y)
-        interval = torch.abs(interval[:, 0, ] - interval[:,1,])
+        #interval = torch.abs(interval[:, 0, ] - interval[:,1,])
         #
         var_pred = interval**2
         beta = args.beta
@@ -363,8 +364,9 @@ if __name__ == '__main__':
     for k in train_num_dict.keys():
         reverse_train_dict[k] = 1/train_num_dict[k]
     #
-    model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
-    #model = ResNets(args).to(device)
+    #model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    model = ResNet_conformal(args).to(device)
+    tau_high, tau_low = args.tau/2, 1 - args.tau/2
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))

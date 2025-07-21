@@ -177,7 +177,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, e):
         elif args.CQR:          # start to solve the conformal way
             upper_loss = pinball_loss(y, upper, tau=tau_high)
             lower_loss = pinball_loss(y, lower, tau=tau_low)
-            interval = abs_err(model, cal_batch, train_weight_dict,  tau=0.1, e=e)
+            interval = abs_err(model, cal_batch, train_weight_dict=train_weight_dict,  tau=0.1, e=e)
         elif args.conforma_LS:
             calib_x, calib_y, _ = cal_batch
             interval = cal_interval(model, calib_x.to(device), calib_y.to(device), y_pred, reverse_train_dict)
