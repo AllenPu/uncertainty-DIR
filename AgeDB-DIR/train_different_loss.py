@@ -153,9 +153,11 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         # different loss in different label
         if args.diff_loss:
-            loss += train_with_different_loss(y, y_pred)
+            diff_loss = train_with_different_loss(y, y_pred)
+            loss += diff_loss
         elif args.dist_loss:
-            loss += train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
+            dist_loss = train_with_dist_loss(y, y_pred, theoretical_labels, dist_loss)
+            loss += dist_loss
         # label shift conformal regression or MSE
         # --nll is used for NLL loss otherwise MSE
         nll_loss, nll, dp_loss = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
@@ -174,7 +176,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         z_list.append(z)
         #
     mse = torch.mean((y - y_pred)**2)
-    print(f'mse is {mse.item()} nll is {nll.item()} interval loss {nll_loss.item()}dp loss is {dp_loss} loss is {loss.item()}')
+    print(f'mse is {mse.item()} nll is {nll.item()} interval loss {nll_loss.item()}dp loss is {dp_loss} loss is {loss.item()} dist loss {dist_loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     labels, preds, z_  = torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
