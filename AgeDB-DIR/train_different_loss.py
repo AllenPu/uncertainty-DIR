@@ -46,7 +46,7 @@ parser.add_argument('--store_name', type=str, default='',
 parser.add_argument('--gpu', type=int, default=None)
 parser.add_argument('--optimizer', type=str, default='adam',
                     choices=['adam', 'sgd'], help='optimizer type')
-parser.add_argument('--lr', type=float, default=5e-5,
+parser.add_argument('--lr', type=float, default=1e-3,
                     help='initial learning rate')
 parser.add_argument('--epoch', type=int, default=101,
                     help='number of epochs to train')
