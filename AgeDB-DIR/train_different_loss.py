@@ -73,7 +73,7 @@ parser.add_argument('--tsne', type=bool, default=False,
 parser.add_argument('--groups', type=int, default=10,
                     help='number of split bins to the wole datasets')
 #
-parser.add_argument('--tau', default=1, type=float,
+parser.add_argument('--tau', default=0.1, type=float,
                     help=' tau for logit adjustment ')
 parser.add_argument('--ranked_contra', action='store_true')
 parser.add_argument('--temp', type=float, help='temperature for contrastive loss', default=0.07)
