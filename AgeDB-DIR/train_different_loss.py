@@ -391,7 +391,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
         #
-        if e == args.epoch - 1 or e == 0:
+        if e == args.epoch - 1 or e < 10:
             #
             #print_mae(mae_dict)
             #
