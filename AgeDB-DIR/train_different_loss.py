@@ -321,8 +321,8 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     #print(f'==================== {type(args.beta)}')
     #print(f' interval shape {interval.shape} y shape {y.shape}')
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
-    print(f"======={nll.shape}=======")
-    nll += addtion_loss.reshape(nll.shape)
+    #
+    nll += addtion_loss
     #
     return addtion_loss, dp_loss, nll
 
