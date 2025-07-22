@@ -372,7 +372,7 @@ if __name__ == '__main__':
     #
     #model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
     model = ResNet_conformal(args).to(device)
-    tau_high, tau_low = args.tau/2, 1 - args.tau/2
+    tau_high, tau_low = 1 - args.tau/2,  args.tau/2
     #
     opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
@@ -391,7 +391,7 @@ if __name__ == '__main__':
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
         #
-        if e == args.epoch - 1 or e < 10:
+        if e == args.epoch - 1 or e%10 == 0:
             #
             #print_mae(mae_dict)
             #
