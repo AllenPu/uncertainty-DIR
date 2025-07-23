@@ -379,7 +379,7 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi#] 
     #
-    output_file = 'dual_loss' + '.txt'
+    #output_file = 'dual_loss' + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     if args.dist_loss:
