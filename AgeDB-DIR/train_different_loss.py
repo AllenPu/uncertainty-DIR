@@ -337,7 +337,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
 
 
 def pinball(y, y_lower, y_upper):
-    print(f' {y.shape} lower {y_lower.shape} upper {y_upper.shape}')
+    #print(f' {y.shape} lower {y_lower.shape} upper {y_upper.shape}')
     upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
     return upper_lower_loss
 
