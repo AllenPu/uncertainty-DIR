@@ -386,7 +386,7 @@ if __name__ == '__main__':
         theoretical_labels, dist_loss = dist_loss_fn(train_labels=train_labels)
     #
     for e in tqdm(range(args.epoch)):
-        adjust_learning_rate(opt_model, e, args)
+        #adjust_learning_rate(opt_model, e, args)
         model, mae_dict = train_one_epoch(args, model, train_loader, val_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively 
