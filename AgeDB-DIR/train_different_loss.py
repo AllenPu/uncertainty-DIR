@@ -330,6 +330,8 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
 
 # use MSE for majority while MAE for minority
 def train_with_different_loss(y, y_pred):
+    maj, med, low = shot_count(train_labels)
+    maj, med, low = torch.tensor(maj).to(device), torch.tensor(med).to(device), torch.tensor(low).to(device)
     maj_loss, med_loss, low_loss = 0, 0, 0
     y_ = y.view(-1)
     maj_mask = torch.isin(y_, maj)
@@ -364,8 +366,8 @@ if __name__ == '__main__':
     #
     loss_mse = nn.MSELoss()
     #
-    maj, med, low = shot_count(train_labels)
-    maj, med, low = torch.tensor(maj).to(device), torch.tensor(med).to(device), torch.tensor(low).to(device)
+    #maj, med, low = shot_count(train_labels)
+    #maj, med, low = torch.tensor(maj).to(device), torch.tensor(med).to(device), torch.tensor(low).to(device)
     reverse_train_dict = {}
     for k in train_num_dict.keys():
         reverse_train_dict[k] = 1/train_num_dict[k]
