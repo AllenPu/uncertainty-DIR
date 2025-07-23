@@ -140,7 +140,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
     #
     var_list, label_list, pred_list, z_list = [], [], [], []
     #
-    nll = 0
+    addtion_loss, dp_loss, nll = 0, 0, 0
     #
     infinite_cal_loader = itertools.cycle(cal_loader)
     #
