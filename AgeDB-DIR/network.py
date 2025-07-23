@@ -226,5 +226,6 @@ class ResNet_conformal(nn.Module):
         y_pred, y_lower, y_upper = y_preds[:,0], y_preds[:,1], y_preds[:2]
         #
         # the ouput dim of the embed is : bs,3
+        print(f' y pred shape {y_pred.shape} y preds shape {y_preds.shape}')
         #
         return y_pred, y_lower, y_upper, z
