@@ -162,6 +162,8 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         # --nll is used for NLL loss otherwise MSE
         addtion_loss, dp_loss, nll = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
         #
+        y_med = (y_lower + y_upper)/2
+        #
         # label shift conformal regression 
         # nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
         loss += nll
@@ -177,7 +179,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
     mse = torch.mean((y - y_pred)**2)
     #print(f'mse is {mse.item()}  interval loss {addtion_loss.item()}')
-    print(f'mse is {mse.item()}  interval loss {addtion_loss}')
+    print(f'mse is {mse.item()}  interval loss {addtion_loss} y pred {y_pred[:10]} y med {y_med[:10] }')
     #print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
