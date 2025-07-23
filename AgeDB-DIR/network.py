@@ -211,9 +211,8 @@ class ResNet_conformal(nn.Module):
         #
         self.Flatten = nn.Flatten(start_dim=1)
         #
-        self.model_linear =  nn.Sequential(nn.Linear(fc_inputs, 1))
-        self.model_lower =  nn.Sequential(nn.Linear(fc_inputs, 1))
-        self.model_upper =  nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.model_linear =  nn.Sequential(nn.Linear(fc_inputs, 3))
+        
         
         
     # g is the same shape of y
@@ -223,9 +222,8 @@ class ResNet_conformal(nn.Module):
         #
         z = self.Flatten(z)
         #
-        y_pred = self.model_linear(z)
-        y_lower = self.model_lower(z)
-        y_upper = self.model_upper(z)
+        y_preds = self.model_linear(z)
+        y_pred, y_lower, y_upper = y_preds[:,0], y_preds[:,1], y_preds[:2]
         #
         # the ouput dim of the embed is : bs,3
         #
