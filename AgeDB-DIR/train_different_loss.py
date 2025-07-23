@@ -211,6 +211,8 @@ def test(model, test_loader, train_labels, args):
             #
             y_pred, y_lower, y_upper, z = model(x)
             #
+            y_pred = (y_lower + y_upper)/2
+            #
             mae_y = torch.mean(torch.abs(y_pred- y))
             mse_y_pred = F.mse_loss(y_pred, y)
             #
@@ -301,7 +303,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     addtion_loss, dp_loss = 0, 0
     # 
     if args.nll:
-        upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
+        upper_lower_loss = pinball(y, y_lower, y_upper)
         addtion_loss += upper_lower_loss
         #
         interval_q = abs_err_ls(model, cal_batch, train_weight_dict,  tau=args.tau, e=e)
@@ -321,11 +323,20 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     beta = int(args.beta)
     #print(f'==================== {type(args.beta)}')
     #print(f' interval shape {interval.shape} y shape {y.shape}')
+    #
+    y_pred = (y_lower + y_upper)/2
+    #
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
     #
     nll += addtion_loss
     #
     return addtion_loss, dp_loss, nll
+
+
+
+def pinball(y, y_lower, y_upper):
+    upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
+    return upper_lower_loss
 
 
 # use MSE for majority while MAE for minority
