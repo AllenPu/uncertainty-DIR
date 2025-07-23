@@ -213,7 +213,7 @@ def test(model, test_loader, train_labels, args):
             #
             y_pred, y_lower, y_upper, z = model(x)
             #
-            y_pred = (y_lower + y_upper)/2
+            #y_pred = (y_lower + y_upper)/2
             #
             mae_y = torch.mean(torch.abs(y_pred- y))
             mse_y_pred = F.mse_loss(y_pred, y)
@@ -326,7 +326,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     #print(f'==================== {type(args.beta)}')
     #print(f' interval shape {interval.shape} y shape {y.shape}')
     #
-    y_pred = (y_lower + y_upper)/2
+    #y_pred = (y_lower + y_upper)/2
     #
     nll = torch.mean(beta_nll_loss(y_pred, var_pred, y, beta=beta, e = e))
     #
