@@ -42,10 +42,10 @@ def abs_err_ls(model, cal_batch, train_weight_dict={}, tau=0.1, e=1):
         #print(cal_batch)
         x, y, _ = cal_batch
         #for idx, (x, _, w) in enumerate(loader):
-        x = x.to(device)
-        y_pred, lower, upper, _ = model(x)
+        x, y = x.to(device), y.to(device)
+        _, lower, upper, _ = model(x)
         #lower, upper  =  torch.abs(lower) , torch.abs(upper)
-        err = torch.max(lower - y_pred, y_pred - upper)
+        err = torch.max(lower - y, y - upper)
         #
         abs_err, _ = torch.sort(err, dim=0)
         idx = int((1-tau)*abs_err.shape[0])
