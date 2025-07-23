@@ -307,7 +307,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     # start for the intervals
     #
     #  use "label shift conformal regression"
-    addtion_loss, dp_loss = 0, 0
+    nll, addtion_loss, dp_loss = 0, 0, 0
     # 
     if args.nll:
         upper_lower_loss = pinball(y, y_lower, y_upper)
