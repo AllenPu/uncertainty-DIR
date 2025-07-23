@@ -97,6 +97,7 @@ parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='u
 parser.add_argument('--nll', action='store_true', help='if you try to use the  nll los with interrval or not')
 parser.add_argument('--beta', default=0.5, help='beta for nll, 0.5 is beta-nll, 1 is MSE')
 parser.add_argument('--max_dp', action='store_true', help='maxmize differential entropy')
+parser.add_argument('--warm_up', type=int, default=40, help='warm up epoch')
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -160,9 +161,11 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
             loss += dis_loss
         # label shift conformal regression or MSE
         # --nll is used for NLL loss otherwise MSE
-        addtion_loss, dp_loss, nll = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
+        if e > args.warm_up:
+            addtion_loss, dp_loss, nll = train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e)
         #
-        y_med = (y_lower + y_upper)/2
+        else:
+            loss += torch.mean((y - y_pred)**2)
         #
         # label shift conformal regression 
         # nll_loss = train_with_nll(x, y, y_pred, x_cal, y_cal)
@@ -179,7 +182,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
     mse = torch.mean((y - y_pred)**2)
     #print(f'mse is {mse.item()}  interval loss {addtion_loss.item()}')
-    print(f'mse is {mse.item()}  interval loss {addtion_loss} y {y[:8]} y pred {y_pred[:8]} y upper med {y_upper[:8] } y lower {y_lower[:8]}')
+    print(f'mse is {mse.item()}  interval loss {addtion_loss} y {y[:8]} y pred {y_pred[:8]} y upper {y_upper[:8] } y lower {y_lower[:8]}')
     #print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
