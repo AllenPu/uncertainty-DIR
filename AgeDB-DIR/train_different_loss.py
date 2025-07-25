@@ -184,7 +184,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         #
     mse = torch.mean((y - y_pred)**2)
     #print(f'mse is {mse.item()}  interval loss {addtion_loss.item()}')
-    print(f'mse is {mse.item()}  interval loss {addtion_loss} y {y[:8]} y pred {y_pred[:8]} y upper {y_upper[:8] } y lower {y_lower[:8]}')
+    #print(f'mse is {mse.item()}  interval loss {addtion_loss} y {y[:8]} y pred {y_pred[:8]} y upper {y_upper[:8] } y lower {y_lower[:8]}')
     #print(f'mse is {mse.item()} nll is {nll.item()} interval loss {addtion_loss.item()} dp loss is {dp_loss} dist loss {dis_loss.item()} Total Loss is {loss.item()}')
     #
     #vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
