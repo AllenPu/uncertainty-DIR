@@ -310,8 +310,10 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
     nll, addtion_loss, dp_loss = 0, 0, 0
     # 
     if args.nll:
-        upper_lower_loss = pinball(y, y_lower, y_upper)
-        addtion_loss += upper_lower_loss
+        upper_loss, lower_loss = pinball(y, y_lower, y_upper)
+        if e%10 == 0:
+            print(f' upper loss {upper_loss.item()} lower loss {lower_loss.item()}')
+        addtion_loss += upper_loss + lower_loss 
         #
         interval_q = abs_err_ls(model, cal_batch, train_weight_dict,  tau=args.tau, e=e)
         interval = torch.abs(y_upper - y_lower + 2*interval_q)
@@ -345,8 +347,9 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
 
 def pinball(y, y_lower, y_upper):
     #print(f' {y.shape} lower {y_lower.shape} upper {y_upper.shape}')
-    upper_lower_loss = pinball_loss(y, y_upper, tau=tau_high) + pinball_loss(y, y_lower, tau=tau_low)
-    return upper_lower_loss
+    upper_loss = pinball_loss(y, y_upper, tau=tau_high) 
+    lower_loss = pinball_loss(y, y_lower, tau=tau_low)
+    return upper_loss, lower_loss
 
 
 # use MSE for majority while MAE for minority
