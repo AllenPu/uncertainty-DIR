@@ -320,7 +320,7 @@ def train_with_nll(y, y_pred, y_lower, y_upper, cal_batch, e):
         #interval = interval.expand_as(y)
         #interval = torch.abs(interval[:, 0, ] - interval[:,1,])
         # force the upper and lower close to bound
-        nll += torch.mean((y - y_upper)**2 + (y - y_lower)**2)
+        #nll += torch.mean((y - y_upper)**2 + (y - y_lower)**2)
         #
         var_pred = interval**2
         # add max differential entropy H(y)
