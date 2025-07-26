@@ -223,8 +223,8 @@ class ResNet_conformal(nn.Module):
         z = self.Flatten(z)
         #
         y_preds = self.model_linear(z)
-        y_pred, y_lower, y_upper = y_preds[:,0].unsqueeze(-1), y_preds[:,1].unsqueeze(-1), y_preds[:,2].unsqueeze(-1)
         #
+        y_pred, y_lower, y_upper = torch.chunk(y_preds, 3, dim=-1)
         # the ouput dim of the embed is : bs,3
         #print(f' y pred shape {y_pred.shape} y preds shape {y_preds.shape}')
         #
