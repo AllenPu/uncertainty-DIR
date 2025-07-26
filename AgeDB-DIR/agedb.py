@@ -181,7 +181,7 @@ class AgeDB(data.Dataset):
     def get_shots(self):
         df = self.df
         train_labels = df['age']
-        train_class_count = []
+        train_class_count, per_shot_count = [], {}
         print(f'the len of the unique is {len(np.unique(train_labels))}')
         for l in np.unique(train_labels):
             train_class_count.append(len(
@@ -190,15 +190,18 @@ class AgeDB(data.Dataset):
         train_shot_dict = {}
         for i in range(len(train_class_count)):
             if train_class_count[i] > 100:
-                train_shot_dict[i] = 0
+                key = 0
+                #train_shot_dict[i] = 0
             elif train_class_count[i] < 20:
-                train_shot_dict[i] = 2
-            #print(train_class_count[i])
-            #print(l1_per_class[i])
-            #print(l1_all_per_class[i])
+                key = 2
             else:
-                train_shot_dict[i] = 1
+                key = 1
+            ##########################
+            per_shot_count[key] = per_shot_count.get(key, 0) + train_class_count[i]
+            train_shot_dict[i] = key
         ######################
+        print(f' many is {per_shot_count[0]} med is {per_shot_count[1]} few is {per_shot_count[2]}')
+        #
         return train_shot_dict
 
        
