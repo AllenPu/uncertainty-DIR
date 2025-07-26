@@ -391,7 +391,7 @@ if __name__ == '__main__':
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
-    print(f' maj {len(maj)} med {len(med)} low {len(low)}}')
+    print(f' maj {len(maj)} med {len(med)} low {len(low)}')
     #maj, med, low = torch.tensor(maj).to(device), torch.tensor(med).to(device), torch.tensor(low).to(device)
     reverse_train_dict = {}
     for k in train_num_dict.keys():
