@@ -201,6 +201,7 @@ class AgeDB(data.Dataset):
             train_shot_dict[i] = key
         ######################
         print(f' many is {per_shot_count[0]} med is {per_shot_count[1]} few is {per_shot_count[2]}')
+        assert 1 == 2
         #
         return train_shot_dict
 
