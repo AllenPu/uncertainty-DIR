@@ -180,7 +180,7 @@ class AgeDB(data.Dataset):
     # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low
     def get_shots(self):
         df = self.df
-        train_labels = df[['split'] == 'val']['age']
+    
         train_class_count, per_shot_count = [], {}
         print(f'the len of the unique is {len(np.unique(train_labels))}')
         for l in np.unique(train_labels):
@@ -227,6 +227,7 @@ if __name__ == '__main__':
     df = pd.read_csv(os.path.join(dir, "agedb.csv"))
     df_train = df[df['split'] =='train']
     df_test = df[df['split'] =='test']
+    train_labels = df_train['age']
     train_dataset = AgeDB(data_dir=dir, df=df_train, img_size=224,
                           split='train', reweight='inv',  group_num=10, smooth='none')  
     test_dataset = AgeDB(data_dir=dir, df=df_test, img_size=224,
