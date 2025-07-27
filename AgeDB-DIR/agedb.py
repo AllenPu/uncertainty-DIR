@@ -180,7 +180,7 @@ class AgeDB(data.Dataset):
     # return a dictionary, key is the label and value is the shot index, 0 : many, 1: median, 2: low
     def get_shots(self):
         df = self.df
-        train_labels = df['age']
+        train_labels = df['split'] == 'val'['age']
         train_class_count, per_shot_count = [], {}
         print(f'the len of the unique is {len(np.unique(train_labels))}')
         for l in np.unique(train_labels):
