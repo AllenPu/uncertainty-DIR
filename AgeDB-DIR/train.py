@@ -255,11 +255,11 @@ def test(model, test_loader, train_labels, args):
     #
     #mae_dict = per_label_mae(pred_, label_)
     #mae_dict = per_label_frobenius_norm(z_, label_)
-    var_per_label = per_label_var(pred, labels)
-    mae_per_label = per_label_mae(pred_, label_)
+    #var_per_label = per_label_var(pred, labels)
+    #mae_per_label = per_label_mae(pred_, label_)
     #
     #
-    return mae_pred.avg, shot_pred, gmean_pred, var_per_label, mae_per_label
+    return mae_pred.avg#, shot_pred, gmean_pred, var_per_label, mae_per_label
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
@@ -313,7 +313,7 @@ if __name__ == '__main__':
     #
     for e in tqdm(range(args.epoch)):
         model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, opts)
-        mae_pred, _, _, _, _ = test(model, test_loader, train_labels, args)
+        mae_pred = test(model, test_loader, train_labels, args)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
