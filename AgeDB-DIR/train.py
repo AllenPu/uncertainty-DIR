@@ -183,7 +183,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
-    ''''
+    
     if args.MSE:
         # the variance from the model output
         uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
@@ -202,7 +202,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
-    '''
+    
 
     return model#, mae_dict#vars_results_from_pred
 
