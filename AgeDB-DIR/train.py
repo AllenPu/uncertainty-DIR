@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm
+from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm, label_uncertainty_accumulation, uncertainty_accumulation
 import torch
 from loss import *
 from network import *
@@ -183,7 +183,7 @@ def train_one_epoch(args, model, train_loader, opts):
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
-    
+    #
     if args.MSE:
         # the variance from the model output
         uncer_maj, uncer_med, uncer_low, uncer_total = 0, 0, 0, 0
@@ -198,13 +198,13 @@ def train_one_epoch(args, model, train_loader, opts):
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     #
-    results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
+    pred_results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item()), str(mse.item())]
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     
 
-    return model#, mae_dict#vars_results_from_pred
+    return model, pred_results,  vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -254,12 +254,12 @@ def test(model, test_loader, train_labels, args):
     print(f' MSE is {mse_pred.avg}')
     #
     #mae_dict = per_label_mae(pred_, label_)
-    mae_dict = per_label_frobenius_norm(z_, label_)
+    #mae_dict = per_label_frobenius_norm(z_, label_)
     var_per_label = per_label_var(pred, labels)
     mae_per_label = per_label_mae(pred_, label_)
     #
     #
-    return mae_pred.avg, shot_pred, gmean_pred, mae_dict
+    return mae_pred.avg, shot_pred, gmean_pred, var_per_label, mae_per_label
         # np.hstack(group), np.hstack(group_pred) #newly added
 
 
@@ -308,29 +308,31 @@ if __name__ == '__main__':
     #
     opts = [opt_model]#, opt_mi#] 
     #
-    output_file = '_beta_' + str(args.beta) +  'MSE' + str(args.MSE) + '.txt'
+    output_file = 'beta_' + str(args.beta) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model = train_one_epoch(args, model, train_loader, opts)
+        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, opts)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
-        '''
-        with open('tr_output_variance' + output_file, "a+") as file:
+        
+        with open('nll_' + output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(results) + '\n')
-            #file.write(" ".join(pred_results) + '\n')
+            file.write(" ".join(pred_results) + '\n')
+            file.write(" ".join(vars_results_from_pred) + '\n')
             file.close()
-        '''
+        
         #
-        if e == 0 or e == args.epoch - 1:
-            print(f'================Epoch is {e}================')
-            _, _, _, _ = test(model, train_loader, train_labels, args)
-            print('================End Cal================')
-        if e == args.epoch - 1:
+        #if e == 0 or e == args.epoch - 1:
+        #    print(f'================Epoch is {e}================')
+        #    _, _, _, _ = test(model, train_loader, train_labels, args)
+        #    print('================End Cal================')
+        '''
+        if e % 1 == 1: #== args.epoch - 1:
             #assert 1 == 2
             # test final model
+            #
             mae_pred, shot_pred, gmean_pred, mae_pred_te  = test(model, test_loader, train_labels, args)
             #
             print('=---------------------------------------------------------------------=\n')
@@ -344,7 +346,7 @@ if __name__ == '__main__':
             print('---------------------------------------------------------------------\n')
             #
             mae_pred, _, _, _  = test(model, train_loader, train_labels, args)
-            '''
+            #
             print("----------train-----------")
             list_key_tr = [k for k in mae_pred_tr.keys()]
             print(list_key_tr)
@@ -362,6 +364,7 @@ if __name__ == '__main__':
             list_results_te = [mae_pred_te[k] for k in mae_pred_te.keys()]
             #
             print(list_results_te)
+            #
             '''
     #write_log('./output/'+store_name, mae_pred, shot_pred, gmean_pred)
     

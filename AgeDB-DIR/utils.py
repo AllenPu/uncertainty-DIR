@@ -664,6 +664,7 @@ def per_label_frobenius_norm(features, labels):
 
 ####
 # return the variance of per label
+# return a dictionary
 ###
 def per_label_var(preds, labels):
     label_to_preds = defaultdict(list)
