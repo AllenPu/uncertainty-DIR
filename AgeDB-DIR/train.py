@@ -313,14 +313,15 @@ if __name__ == '__main__':
     #
     for e in tqdm(range(args.epoch)):
         model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, opts)
+        mae_pred, _, _, _, _ = test(model, test_loader, train_labels, args)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
         #
         
         with open('nll_' + output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(pred_results) + '\n')
-            file.write(" ".join(vars_results_from_pred) + '\n')
+            file.write(" ".join(pred_results) + " "+ " ".join(vars_results_from_pred) + " " + str(mae_pred))
+            #file.write(" ".join(vars_results_from_pred) + '\n')
             file.close()
         
         #
