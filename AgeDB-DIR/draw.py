@@ -31,8 +31,22 @@ for name in ['MSE']:
     y2 = df[f'{name} Train MAE'].values
     y3 = df[f'{name} Test Frob'].values
     y4 = df[f'{name} Test MAE'].values
+    #
+    #
+    #x = df['Epoch'].values
+    #y1 = df['uncer_pred_maj'].values
+    #y2 = df['uncer_pred_med'].values
+    #y3 = df['uncer_pred_low]'.values
+    #y4 = df['MAE'].values
+    #
 
-
+    #
+    #x = df['Epoch'].values
+    #y1 = df['uncer_maj'].values
+    #y2 = df['uncer_med'].values
+    #y3 = df['uncer_low]'.values
+    #y4 = df['MAE'].values
+    #
 
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
