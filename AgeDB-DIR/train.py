@@ -320,7 +320,7 @@ if __name__ == '__main__':
         
         with open('nll_' + output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(pred_results) + " "+ " ".join(vars_results_from_pred) + " " + str(mae_pred))
+            file.write(" ".join(pred_results) + " "+ " ".join(vars_results_from_pred) + " " + str(mae_pred) + '\n')
             #file.write(" ".join(vars_results_from_pred) + '\n')
             file.close()
         
