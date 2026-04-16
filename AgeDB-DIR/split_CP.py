@@ -47,7 +47,8 @@ def evaluate_conformal(
 
 def split_cp_loss(
         loss: nn.Module,
-        prediction : torch.Tensor,
+        true: torch.Tensor,
+        prediction: torch.Tensor,
         lower: torch.Tensor,
         upper: torch.Tensor,
         lamb: float
@@ -55,7 +56,9 @@ def split_cp_loss(
     #
     bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     #coverage
-    coverage_penalty = upper - lower
+    coverage_prob = (true >= lower) & (true <= upper)
+    coverage_penalty = torch.relu(lamb - coverage_prob )
+    #
     loss = bound_penalty.mean() + coverage_penalty.mean()
     #
     return loss

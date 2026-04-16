@@ -18,5 +18,8 @@ You need to : integrated this module with the main model （I do not remember if
     |----> feed the batch into the backbone, get the feature
     |----> pass the feature to two directions, 
                     |----> one is to predict label
-                    |----> one is to build the prediction interval |----> split CP module  |----> get the CP loss
+                    |----> one is to build the prediction interval |----> split CP module (you need to think which gradient should be backwards to the CP module) |----> get the CP loss
     |----> use the above two items to NLL
+
+Pls think:
+    Do we need warm-up? Can CP module train simoutaneously with the backbone?
