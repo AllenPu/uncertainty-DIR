@@ -49,14 +49,14 @@ def split_cp_loss(
         loss: nn.Module,
         prediction : torch.Tensor,
         lower: torch.Tensor,
-        upper: torch.Tensor
-        ):
-    '''
-    Returns:
-    - compute the loss for the module of the split CP, 
-    - control the prediction inside of the [upper, lower]
-    '''
-    penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
-    loss = penalty.mean()
+        upper: torch.Tensor,
+        lamb: float
+    ):
+    #
+    bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
+    #coverage
+    coverage_penalty = upper - lower
+    loss = bound_penalty.mean() + coverage_penalty.mean()
+    #
     return loss
     
