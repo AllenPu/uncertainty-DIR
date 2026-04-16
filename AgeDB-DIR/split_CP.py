@@ -41,3 +41,21 @@ def evaluate_conformal(
 
     avg_width = (upper - lower).mean().item()
     return coverage, avg_width
+
+
+
+def split_cp_loss(
+        loss: nn.Module,
+        prediction : torch.Tensor,
+        lower: torch.Tensor,
+        upper: torch.Tensor
+        ):
+    '''
+    Returns:
+    - compute the loss for the module of the split CP, 
+    - control the prediction inside of the [upper, lower]
+    '''
+    penalty = torch.relu(lower - prediction) + torch.relu(prediction - upper)
+    loss = penalty.mean()
+    return loss
+    
