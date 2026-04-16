@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 
@@ -55,7 +56,7 @@ def split_cp_loss(
     - compute the loss for the module of the split CP, 
     - control the prediction inside of the [upper, lower]
     '''
-    penalty = torch.relu(lower - prediction) + torch.relu(prediction - upper)
+    penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     loss = penalty.mean()
     return loss
     
