@@ -2,8 +2,9 @@ import torch.nn as nn
 import torchvision
 import torch
 import torch.optim as optim
-from model import *
 import numpy as np
+import torch.nn.functional as F
+
 
 # group based network arch : output group*2
 class ResNet_regression(nn.Module):
@@ -133,18 +134,15 @@ class Guassian_uncertain_ResNet(nn.Module):
         #
         self.feature_dim = 64       
 
-
-
     def forward(self, x):
         feat = self.encoder(x)
         if self.norm:
             feat = F.normalize(feat, dim=-1)
         feat = self.feature_rescale(feat)
+
         mean, var = self.guassian_head(feat)
-    
-        # feature, mean, variance
-        return feat, mean, var
-    
+
+        return feat, mean, var  
 
 
 
@@ -191,7 +189,6 @@ class GaussianLikelihoodHead(nn.Module):
 
 
         return mean, var
-
 
     
 

@@ -10,14 +10,16 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from agedb import *
-from utils import AverageMeter, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm, label_uncertainty_accumulation, uncertainty_accumulation
+from utils import AverageMeter, shot_count, shot_metric, setup_seed, per_label_var, per_label_mae, per_label_frobenius_norm, label_uncertainty_accumulation, uncertainty_accumulation
 import torch
 from loss import *
 from network import *
 import torch.optim as optim
 import time
 from scipy.stats import gmean
-
+from split_CP import split_cp_loss, calibrate_qhat_from_batch
+import torch.nn.functional as F
+import itertools
 
 
 # current sota 7.73, 7.46, 7.76, 10.08
@@ -32,7 +34,7 @@ parser.add_argument('--seed', default=3407)
 parser.add_argument('--dataset', type=str, default='agedb',
                     choices=['imdb_wiki', 'agedb'], help='dataset name')
 parser.add_argument('--data_dir', type=str,
-                    default='/home/rpu2/scratch/data/imbalanced-regression/agedb-dir/data', help='data directory')
+                    default='./data', help='data directory')
 parser.add_argument('--model', type=str, default='resnet50', help='model name')
 parser.add_argument('--store_root', type=str, default='checkpoint',
                     help='root path for storing checkpoints, logs')
@@ -90,7 +92,9 @@ parser.add_argument('--scale', type=float, default=1, help='scale of the sharpne
 #parser.add_argument('--diversity', type=float, default=0, help='scale of the diversity loss in regressor output')
 parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the diversity loss in z')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
-#
+parser.add_argument('--lamb', default=0.9, type=float,  help='lamb for coverage')
+parser.add_argument('--weight', default=1, type=float,  help='weight for cp_loss in total loss')
+parser.add_argument('--alpha', default=0.1, type=float,  help='miscoverage level for conformal calibration')
 #
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
@@ -115,42 +119,47 @@ def get_data_loader(args):
     print('=====> Preparing data...')
     df = pd.read_csv(os.path.join(args.data_dir, "agedb.csv"))
     df_train, df_val, df_test = df[df['split'] ==
-                                   'train'], df[df['split'] == 'val'], df[df['split'] == 'test']
+                                'train'], df[df['split'] == 'val'], df[df['split'] == 'test']
     train_labels = df_train['age']
     #
     train_dataset = AgeDB(data_dir=args.data_dir, df=df_train, img_size=args.img_size,
-                          split='train', reweight=args.reweight, group_num=args.groups, smooth=args.smooth)   
+                        split='train', reweight=args.reweight, group_num=args.groups, smooth=args.smooth)   
     #
     val_dataset = AgeDB(data_dir=args.data_dir, df=df_val,
                         img_size=args.img_size, split='val', group_num=args.groups)
     test_dataset = AgeDB(data_dir=args.data_dir, df=df_test,
-                         img_size=args.img_size, split='test', group_num=args.groups)
+                        img_size=args.img_size, split='test', group_num=args.groups)
     #
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                              num_workers=args.workers, pin_memory=True, drop_last=False)
+                            num_workers=args.workers, pin_memory=True, drop_last=False)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
                             num_workers=args.workers, pin_memory=True, drop_last=False)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                             num_workers=args.workers, pin_memory=True, drop_last=False)
+                            num_workers=args.workers, pin_memory=True, drop_last=False)
     print(f"Training data size: {len(train_dataset)}")
     print(f"Validation data size: {len(val_dataset)}")
     print(f"Test data size: {len(test_dataset)}")
     return train_loader, val_loader, test_loader, train_labels
 
 
-def train_one_epoch(args, model, train_loader, opts):
+def train_one_epoch(args, model, train_loader, cal_loader, opts):
     model.train()
+    cal_iter = itertools.cycle(cal_loader)
     #
     [opt_model] = opts
     #
-    var_list, label_list, pred_list, z_list = [], [], [], []
+    interval_list, label_list, pred_list, z_list = [], [], [], []
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
         #
-        z, y_pred, var_pred = model(x)
+        y_pred, lower, upper, z = model(x)
+        #calibrate through validation set
+        cal_batch = next(cal_iter)
+        q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
+        interval = torch.clamp(torch.abs(upper - lower)+ 2 * q_hat, min=1e-6)
         #
         #mse = F.mse_loss(y_pred, y, reduction='sum')
         #
@@ -160,26 +169,28 @@ def train_one_epoch(args, model, train_loader, opts):
             nll_loss = torch.abs(y_pred - y)
         else:
             # use beta NLL
-            nll_loss = beta_nll_loss(y_pred, var_pred, y, args.beta)
+            nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
         #
         if args.smooth  == 'lds':
             nll_loss = nll_loss * w.expand_as(nll_loss)
         #
+        cp_loss = split_cp_loss(None, y, y_pred.detach(), lower, upper, lamb=args.lamb)
+
         nll_loss = torch.sum(nll_loss)
         #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss.to(torch.float)#+ variance_loss
+        loss = nll_loss.to(torch.float) + args.weight * cp_loss#+ variance_loss
         #loss = loss.to(torch.float)
         #
         opt_model.zero_grad()
         loss.backward()
         opt_model.step()
         #
-        var_list.append(var_pred)
+        interval_list.append(interval)
         label_list.append(y)
         pred_list.append(y_pred)
         z_list.append(z)
     #
-    vars, labels, preds, z_  = torch.cat(var_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
+    vars, labels, preds, z_  = torch.cat(interval_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
@@ -227,7 +238,8 @@ def test(model, test_loader, train_labels, args):
             #
             labels.extend(y.data.cpu().numpy())
             #
-            z, y_pred, var_pred = model(x)
+            y_pred, lower, upper, z = model(x)
+            interval = torch.clamp(upper - lower, min=1e-6)
             #
             #print(f' y shape is  {y_output.shape}')
             #
@@ -275,10 +287,10 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
         f.write(f' store name is {store_name}')
         #
         f.write(' Prediction ALL MAE {} Many: MAE {} Median: MAE {} Low: MAE {}'.format(mae_pred, shot_pred['many']['l1'],
-                                                                             shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
+                                                                            shot_pred['median']['l1'], shot_pred['low']['l1']) + "\n")
         #
         f.write(' G-mean Prediction {}, Many : G-Mean {}, Median : G-Mean {}, Low : G-Mean {}'.format(gmean_pred, shot_pred['many']['gmean'],
-                                                                         shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
+                                                                        shot_pred['median']['gmean'], shot_pred['low']['gmean'])+ "\n")     
         f.write('---------------------------------------------------------------------\n')
         f.close()
 #############################
@@ -291,13 +303,13 @@ if __name__ == '__main__':
     setup_seed(args.seed)
     store_name = ''
     #
-    train_loader, test_loader, val_loader,  train_labels = get_data_loader(args)
+    train_loader, val_loader, test_loader,  train_labels = get_data_loader(args)
     #
     loss_mse = nn.MSELoss()
     #
     maj, med, low = shot_count(train_labels)
     #
-    model = Guassian_uncertain_ResNet(name = 'resnet18', norm = args.feature_norm, weight_norm = args.weight_norm).to(device)
+    model = ResNet_conformal(args).to(device)
     #
     #feature_dim = model.feature_dim
     #
@@ -312,7 +324,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, opts)
+        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts)
         mae_pred = test(model, test_loader, train_labels, args)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively

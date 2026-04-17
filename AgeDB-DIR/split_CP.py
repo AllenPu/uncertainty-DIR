@@ -1,7 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple
 
+
+def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        x_cal, y_cal, _ = cal_batch
+        x_cal, y_cal = x_cal.to(device), y_cal.to(device)
+        y_pred, lower, upper, _ = model(x_cal)
+        score = torch.maximum(lower - y_cal, y_cal - upper)
+        score = torch.clamp(score, min=0.0)
+        q_hat = torch.quantile(score.flatten(), 1 - alpha)
+    model.train(was_training)
+    return q_hat
 
 
 def predict_with_interval(
@@ -15,9 +29,9 @@ def predict_with_interval(
     """
     model.eval()
     x = x.to(device)
-    pred = model(x)
-    lower = pred - q_hat
-    upper = pred + q_hat
+    pred, lower, upper, _ = model(x)
+    lower = lower - q_hat
+    upper = upper + q_hat
     return pred.cpu(), lower.cpu(), upper.cpu()
 
 
@@ -56,10 +70,9 @@ def split_cp_loss(
     #
     bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     #coverage
-    coverage_prob = (true >= lower) & (true <= upper)
-    coverage_penalty = torch.relu(lamb - coverage_prob )
+    coverage_prob = ((true >= lower) & (true <= upper)).float()
+    coverage_penalty = torch.relu(lamb - coverage_prob)
     #
     loss = bound_penalty.mean() + coverage_penalty.mean()
     #
     return loss
-    
