@@ -30,11 +30,11 @@ os.environ["KMP_WARNINGS"] = "FALSE"
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 # training/optimization related
-parser.add_argument('--seed', default=3407)
+parser.add_argument('--seed', default=42)
 parser.add_argument('--dataset', type=str, default='agedb',
                     choices=['imdb_wiki', 'agedb'], help='dataset name')
 parser.add_argument('--data_dir', type=str,
-                    default='./data', help='data directory')
+                    default='/root/autodl-tmp/data', help='data directory')
 parser.add_argument('--model', type=str, default='resnet50', help='model name')
 parser.add_argument('--store_root', type=str, default='checkpoint',
                     help='root path for storing checkpoints, logs')
@@ -43,10 +43,10 @@ parser.add_argument('--store_name', type=str, default='',
 parser.add_argument('--gpu', type=int, default=None)
 parser.add_argument('--optimizer', type=str, default='adam',
                     choices=['adam', 'sgd'], help='optimizer type')
-parser.add_argument('--loss', type=str, default='l1', choices=[
-                    'mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
+parser.add_argument('--loss', type=str, default='l1', choices=['mse', 'l1', 'focal_l1', 'focal_mse', 'huber'], help='training loss type')
 parser.add_argument('--lr', type=float, default=5e-5,
                     help='initial learning rate')
+parser.add_argument('--warmup_epoch', default=50, type=int, help='warm-up epochs')
 parser.add_argument('--epoch', type=int, default=101,
                     help='number of epochs to train')
 parser.add_argument('--momentum', type=float, default=0.9,
@@ -130,25 +130,27 @@ def get_data_loader(args):
     test_dataset = AgeDB(data_dir=args.data_dir, df=df_test,
                         img_size=args.img_size, split='test', group_num=args.groups)
     #
+    pin_memory = torch.cuda.is_available()
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
-                            num_workers=args.workers, pin_memory=True, drop_last=False)
+                            num_workers=args.workers, pin_memory=pin_memory, drop_last=False)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False,
-                            num_workers=args.workers, pin_memory=True, drop_last=False)
+                            num_workers=args.workers, pin_memory=pin_memory, drop_last=False)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False,
-                            num_workers=args.workers, pin_memory=True, drop_last=False)
+                            num_workers=args.workers, pin_memory=pin_memory, drop_last=False)
     print(f"Training data size: {len(train_dataset)}")
     print(f"Validation data size: {len(val_dataset)}")
     print(f"Test data size: {len(test_dataset)}")
     return train_loader, val_loader, test_loader, train_labels
 
 
-def train_one_epoch(args, model, train_loader, cal_loader, opts):
+def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     model.train()
     cal_iter = itertools.cycle(cal_loader)
     #
     [opt_model] = opts
     #
     interval_list, label_list, pred_list, z_list = [], [], [], []
+    nll_loss_history = []
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -156,31 +158,45 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         x, y, w  = x.to(device), y.to(device), w.to(device)
         #
         y_pred, lower, upper, z = model(x)
-        #calibrate through validation set
-        cal_batch = next(cal_iter)
-        q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
-        interval = torch.clamp(torch.abs(upper - lower)+ 2 * q_hat, min=1e-6)
-        #
-        #mse = F.mse_loss(y_pred, y, reduction='sum')
-        #
-        if args.MSE:
-            nll_loss = 0.5 * (y_pred - y) ** 2
-        elif args.MAE:
-            nll_loss = torch.abs(y_pred - y)
-        else:
-            # use beta NLL
-            nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-        #
-        if args.smooth  == 'lds':
-            nll_loss = nll_loss * w.expand_as(nll_loss)
-        #
-        cp_loss = split_cp_loss(None, y, y_pred.detach(), lower, upper, lamb=args.lamb)
+        if epoch < args.warmup_epoch:
+            # During warmup, only optimize the point prediction head.
+            if args.MAE:
+                point_loss = torch.abs(y_pred - y)
+            else:
+                point_loss = (y_pred - y) ** 2
 
-        nll_loss = torch.sum(nll_loss)
-        #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-        loss = nll_loss.to(torch.float) + args.weight * cp_loss#+ variance_loss
-        #loss = loss.to(torch.float)
-        #
+            if args.smooth == 'lds':
+                point_loss = (point_loss * w.expand_as(point_loss)).sum() / w.sum().clamp_min(1e-12)
+            else:
+                point_loss = point_loss.mean()
+
+            nll_loss = point_loss.to(torch.float)
+            interval = torch.zeros_like(y_pred)
+            loss = nll_loss
+
+        else:
+            cal_batch = next(cal_iter)
+            q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
+            interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
+
+            if args.MSE:
+                nll_loss = 0.5*(y_pred - y) ** 2
+            elif args.MAE:
+                nll_loss = torch.abs(y_pred - y)
+            else:
+                nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+
+            if args.smooth == 'lds':
+                nll_loss = (nll_loss * w.expand_as(nll_loss)).sum() / w.sum().clamp_min(1e-12)
+            else:
+                nll_loss = nll_loss.mean()
+
+            cp_loss = split_cp_loss(None, y, y_pred.detach(), lower, upper, lamb=args.lamb)
+
+            #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
+            loss = nll_loss.to(torch.float) + args.weight * cp_loss#+ variance_loss
+            #loss = loss.to(torch.float)
+            #
         opt_model.zero_grad()
         loss.backward()
         opt_model.step()
@@ -189,8 +205,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         label_list.append(y)
         pred_list.append(y_pred)
         z_list.append(z)
+        nll_loss_history.append(nll_loss.item())
     #
     vars, labels, preds, z_  = torch.cat(interval_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
+    epoch_nll_loss = float(np.mean(nll_loss_history)) if nll_loss_history else 0.0
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
@@ -209,7 +227,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts):
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     #
-    pred_results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(nll_loss.item())]
+    pred_results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(epoch_nll_loss)]
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
@@ -239,7 +257,7 @@ def test(model, test_loader, train_labels, args):
             labels.extend(y.data.cpu().numpy())
             #
             y_pred, lower, upper, z = model(x)
-            interval = torch.clamp(upper - lower, min=1e-6)
+            interval = torch.clamp(torch.abs(upper - lower), min=1e-6)
             #
             #print(f' y shape is  {y_output.shape}')
             #
@@ -324,7 +342,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
-        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts)
+        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
         mae_pred = test(model, test_loader, train_labels, args)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively

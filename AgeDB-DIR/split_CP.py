@@ -70,8 +70,10 @@ def split_cp_loss(
     #
     bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     #coverage
-    coverage_prob = ((true >= lower) & (true <= upper)).float()
-    coverage_penalty = torch.relu(lamb - coverage_prob)
+    k=10
+    soft_covered = torch.sigmoid(k * (true - lower)) * torch.sigmoid(k * (upper - true))
+    coverage = soft_covered.mean()
+    coverage_penalty = torch.relu(lamb - coverage)
     #
     loss = bound_penalty.mean() + coverage_penalty.mean()
     #
