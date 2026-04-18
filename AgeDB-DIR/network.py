@@ -210,6 +210,9 @@ class ResNet_conformal(nn.Module):
         #
         self.model_linear =  nn.Sequential(nn.Linear(fc_inputs, 3))
         
+        self.pred_head = nn.Linear(fc_inputs, 1)
+        self.interval_head = nn.Linear(fc_inputs, 2)
+
         
         
     # g is the same shape of y
@@ -218,10 +221,14 @@ class ResNet_conformal(nn.Module):
         z = self.model_extractor(x)
         #
         z = self.Flatten(z)
+        y_pred = self.pred_head(z)
+        z_cp = z.detach()
+        lower_upper = self.interval_head(z_cp)
+        y_lower, y_upper = torch.chunk(lower_upper, 2, dim=-1)
         #
-        y_preds = self.model_linear(z)
+        #y_preds = self.model_linear(z)
         #
-        y_pred, y_lower, y_upper = torch.chunk(y_preds, 3, dim=-1)
+        #y_pred, y_lower, y_upper = torch.chunk(y_preds, 3, dim=-1)
         # the ouput dim of the embed is : bs,3
         #print(f' y pred shape {y_pred.shape} y preds shape {y_preds.shape}')
         #
