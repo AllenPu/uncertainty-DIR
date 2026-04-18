@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Tuple
+from conform_cqr import pinball_loss
 
-
+#CQR-based interval estimation
 def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
     was_training = model.training
     model.eval()
@@ -16,6 +17,31 @@ def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
         q_hat = torch.quantile(score.flatten(), 1 - alpha)
     model.train(was_training)
     return q_hat
+
+#split-CP based interval estimation, 90% coverage 
+def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
+    was_training = model.training
+    model.eval()
+    with torch.no_grad():
+        x_cal, y_cal, _ = cal_batch
+        x_cal, y_cal = x_cal.to(device), y_cal.to(device)
+        y_pred, lower, upper, _ = model(x_cal)
+        q_hat_list = torch.sort(torch.abs(y_cal-y_pred), descending=True, dim=0).flatten()
+        q_hat = torch.quantile(q_hat_list, 1-alpha)
+    model.train(was_training)
+    return q_hat
+
+
+# return interval
+def get_interval(model, cal_batch, device, alpha=0.1, pattern='cqr'):
+    assert pattern in ['cqr', 'split']
+    if pattern == 'cqr':
+        return calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
+    elif pattern == 'splitCP':
+        return calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1)
+    else:
+        raise NotImplementedError
+
 
 
 def predict_with_interval(
@@ -58,9 +84,8 @@ def evaluate_conformal(
     return coverage, avg_width
 
 
-
+# split CP loss (dual output)
 def split_cp_loss(
-        loss: nn.Module,
         true: torch.Tensor,
         prediction: torch.Tensor,
         lower: torch.Tensor,
@@ -78,3 +103,5 @@ def split_cp_loss(
     loss = bound_penalty.mean() + coverage_penalty.mean()
     #
     return loss
+
+
