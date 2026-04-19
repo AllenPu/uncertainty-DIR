@@ -176,7 +176,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
 
         else:
             cal_batch = next(cal_iter)
-            q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
+            q_hat, cp_loss = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
             interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
 
             if args.MSE:
