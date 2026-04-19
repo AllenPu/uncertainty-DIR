@@ -8,7 +8,7 @@ In this file, you need to pay attention to serveral files:
 
 
 Updated list
-1. change the name of split_cp_loss -> cqr coverage loss (pls revise the train.py code correspondingly)
+1. change the name of split_cp_loss -> coverage loss (pls revise the train.py code correspondingly)
 2. add the cqr loss with pineball loss -> the orginal paper loss
 3. add the split 
 

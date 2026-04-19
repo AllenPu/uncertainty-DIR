@@ -17,7 +17,7 @@ def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
         q_hat = torch.quantile(score.flatten(), 1 - alpha)
     model.train(was_training)
     # calculate the loss
-    cp_loss = cqr_coverage_loss(y_cal, y_pred, lower, upper, alpha)
+    cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
     #
     return q_hat, cp_loss
 
@@ -28,11 +28,13 @@ def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
     with torch.no_grad():
         x_cal, y_cal, _ = cal_batch
         x_cal, y_cal = x_cal.to(device), y_cal.to(device)
-        y_pred, lower, upper, _ = model(x_cal)
+        y_pred, _, _, _ = model(x_cal)
         q_hat_list = torch.sort(torch.abs(y_cal-y_pred), descending=True, dim=0).flatten()
         q_hat = torch.quantile(q_hat_list, 1-alpha)
     model.train(was_training)
-    return q_hat
+    lower, upper = y_pred-q_hat, y_pred+q_hat
+    cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
+    return q_hat, cp_loss
 
 
 # return interval
@@ -88,13 +90,18 @@ def evaluate_conformal(
 
 
 # split CP loss (dual output)
-def cqr_coverage_loss(
+def coverage_loss(
         true: torch.Tensor,
         prediction: torch.Tensor,
         lower: torch.Tensor,
         upper: torch.Tensor,
         lamb: float
     ):
+    '''
+        This loss can be used for both CQR and Split CP, as you only need revise the upper and lower predictions
+            ---- from model prediction: upper and lower --> CQR
+            ---- from model y_pred --> construct the upper and lower --> Split CP
+    '''
     #
     bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     #coverage
@@ -121,5 +128,7 @@ def cqr_pinball(
     loss_lower_quantile = pinball_loss(y_true, y_pred, low)
     loss = loss_lower_quantile + loss_upper_quantile
     return loss
+
+
 
 
