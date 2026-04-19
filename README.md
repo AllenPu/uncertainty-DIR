@@ -21,11 +21,14 @@ Then, I have acheived:
 3. gave you a demo on which part of network to update here:
 
     for main part you need to first build one optimizer:
-        opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+        opt_extractor = optim.Adam(model.model_extractor.parameters(), lr=args.lr, weight_decay=5e-4)
+
+    for the regressor we can have:
+        opt_regressor = optim.Adam(model.pred_head.parameters(), lr=args.lr, weight_decay=5e-4)
 
     you need to new another optimizer with:
-        opt_cp = optim.Adam(model**.cp module**.parameters(), lr=args.lr, weight_decay=5e-4)
+        opt_cp = optim.Adam(model.interval_head.parameters(), lr=args.lr, weight_decay=5e-4)
 
     Then, in per-batch training, when you estimate the q_hat, you can also have the loss (which I achieved already):
-        first, update the parameter of the main model with nll_loss. 
+        first, update the parameter of the main model (extractor and pred_head) with nll_loss. 
         second, update the parameter of cp module with cp_loss. 

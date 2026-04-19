@@ -208,10 +208,11 @@ class ResNet_conformal(nn.Module):
         #
         self.Flatten = nn.Flatten(start_dim=1)
         #
-        self.model_linear =  nn.Sequential(nn.Linear(fc_inputs, 3))
-        
-        self.pred_head = nn.Linear(fc_inputs, 1)
-        self.interval_head = nn.Linear(fc_inputs, 2)
+        self.pred_head =  nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.interval_head = nn.Sequential(nn.Linear(fc_inputs, 2))
+
+        #self.pred_head = nn.Linear(fc_inputs, 1)
+        #self.interval_head = nn.Linear(fc_inputs, 2)
 
         
         
@@ -222,8 +223,8 @@ class ResNet_conformal(nn.Module):
         #
         z = self.Flatten(z)
         y_pred = self.pred_head(z)
-        z_cp = z.detach()
-        lower_upper = self.interval_head(z_cp)
+        #z_cp = z.detach()
+        lower_upper = self.interval_head(z)
         y_lower, y_upper = torch.chunk(lower_upper, 2, dim=-1)
         #
         #y_preds = self.model_linear(z)
