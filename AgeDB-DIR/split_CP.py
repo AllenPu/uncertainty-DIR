@@ -16,7 +16,10 @@ def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
         score = torch.clamp(score, min=0.0)
         q_hat = torch.quantile(score.flatten(), 1 - alpha)
     model.train(was_training)
-    return q_hat
+    # calculate the loss
+    cp_loss = cqr_coverage_loss(y_cal, y_pred, lower, upper, alpha)
+    #
+    return q_hat, cp_loss
 
 #split-CP based interval estimation, 90% coverage 
 def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
@@ -85,7 +88,7 @@ def evaluate_conformal(
 
 
 # split CP loss (dual output)
-def split_cp_loss(
+def cqr_coverage_loss(
         true: torch.Tensor,
         prediction: torch.Tensor,
         lower: torch.Tensor,
@@ -102,6 +105,21 @@ def split_cp_loss(
     #
     loss = bound_penalty.mean() + coverage_penalty.mean()
     #
+    return loss
+
+
+# dual output, with different tau set up, return both upper and lower loss bar
+def cqr_pinball(
+        y_true : torch.Tensor,
+        y_pred : torch.Tensor,
+        lamb: float
+    ):
+    #
+    tau = 1 - lamb
+    high, low  = 1 - tau/2, 1 = tau - tau/2
+    loss_upper_quantile = pinball_loss(y_true, y_pred, high)
+    loss_lower_quantile = pinball_loss(y_true, y_pred, low)
+    loss = loss_lower_quantile + loss_upper_quantile
     return loss
 
 
