@@ -126,8 +126,8 @@ def cqr_pinball(
     high, low  = 1 - tau/2, 1 = tau - tau/2
     loss_upper_quantile = pinball_loss(y_true, y_pred, high)
     loss_lower_quantile = pinball_loss(y_true, y_pred, low)
-    loss = loss_lower_quantile + loss_upper_quantile
-    return loss
+    #loss = loss_lower_quantile + loss_upper_quantile
+    return loss_lower_quantile, loss_upper_quantile
 
 
 

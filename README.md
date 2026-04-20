@@ -34,3 +34,7 @@ Then, I have acheived:
     Then, in per-batch training, when you estimate the q_hat, you can also have the loss (which I achieved already):
         first, update the parameter of the main model (extractor and pred_head) with nll_loss. 
         second, update the parameter of cp module with cp_loss. 
+
+
+    If you are going to use the pinball loss, you should use different backpropagations optimizers.
+    The pinball loss we output has 2 heads : one is the upper loss and the other is the lower loss, you should use the upper loss to update the upper_optimizer and vice verse
