@@ -33,7 +33,7 @@ def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
         q_hat_list = torch.abs(y_cal - y_pred).flatten()
         q_hat = torch.quantile(q_hat_list, 1 - alpha)
     model.train(was_training)
-    lower, upper = y_pred-q_hat, y_pred+q_hat
+    #lower, upper = y_pred-q_hat, y_pred+q_hat
     #cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
     return q_hat
 
@@ -111,7 +111,7 @@ def coverage_loss(
     coverage = soft_covered.mean()
     coverage_penalty = torch.relu(lamb - coverage)
     #
-    loss = bound_penalty.mean() + coverage_penalty.mean()
+    loss = bound_penalty.mean() + coverage_penalty.mean()  
     #
     return loss
 
@@ -131,3 +131,11 @@ def cqr_pinball(
     #loss = loss_lower_quantile + loss_upper_quantile
     return loss_lower_quantile, loss_upper_quantile
 
+
+# minimize the prediction interval
+def interval_minimization(
+        lower: torch.Tensor,
+        upper: torch.Tensor,
+    ):
+    loss = torch.abs(upper-lower).mean()
+    return loss

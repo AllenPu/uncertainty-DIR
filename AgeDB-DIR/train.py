@@ -17,7 +17,7 @@ from network import *
 import torch.optim as optim
 import time
 from scipy.stats import gmean
-from split_CP import coverage_loss, calibrate_qhat_from_batch, calibrate_qhat_splitCP, cqr_pinball
+from split_CP import coverage_loss, calibrate_qhat_from_batch, calibrate_qhat_splitCP, cqr_pinball, interval_minimization
 import torch.nn.functional as F
 import itertools
 
@@ -108,6 +108,7 @@ parser.add_argument('--MAE', action='store_true', help='only use MAE or not')
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
+parser.add_argument('--inv_method', default='split_cp', choices=['split_cp', 'cqr_pinball', 'cqr_coverage'], help='use which method to train interval module')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -146,7 +147,7 @@ def get_data_loader(args):
 
 def resolve_stage_mode(args, epoch):
     if args.cp_mode == 'hybrid':
-        return 'split' if epoch < args.warmup_epoch else 'cqr'
+        return 'warmup' if epoch < args.warmup_epoch else 'train'
     return args.cp_mode
 
 
@@ -170,7 +171,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
-        if stage_mode == 'split':
+        if stage_mode == 'warmup':
             y_pred, _, _, z = model(x)
             interval = torch.zeros_like(y_pred)
             mse_loss = (y_pred - y) ** 2
@@ -183,7 +184,41 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             opt_regressor.step()
 
         else:
+            #
             cal_batch = next(cal_iter)
+            # from warm_up to train the whole stage
+            #
+            # choose a method to train the interval prediction module
+            # split cp
+            if args.inv_method is 'split':
+                y_pred, _, _, z = model(x)
+                qhat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
+                lower, upper = y_pred-q_hat, y_pred+q_hat
+                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
+                interval = upper-lower+2*qhat
+            # cqr : pinball loss based
+            elif args.inv_method is 'cqr_pinball':
+                #
+                y_pred, lower, upper, z = model(x)
+                qhat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
+                #loss_lower_quantile is for lower interval head, loss_upper_quantile is for upper interval head
+                loss_lower_quantile, loss_upper_quantile = cqr_pinball(model, cal_batch, device, alpha=args.alpha)
+                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
+                interval = upper-lower+2*qhat
+            elif args.inv_method is 'cqr_coverage':
+                #
+                y_pred, lower, upper, z = model(x)
+                qhat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
+                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
+                interval = upper-lower+2*qhat
+            #################
+            else:
+                NotImplementedError
+
+            # this loss is to minize the interval size
+            interval_loss = interval_minimization(upper, lower)
+
+            
             y_pred, _, _, z = model(x)
 
             z_det = z.detach()
@@ -219,7 +254,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             y_pred, lower, upper, z = model(x)
             interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
             variance_for_nll = interval.detach().clamp_min(1e-6)
-
+            
             if args.MSE:
                 nll_loss = (y_pred - y) ** 2
             elif args.MAE:
