@@ -226,7 +226,7 @@ class ResNet_conformal(nn.Module):
         y_pred = self.pred_head(z)
         #z_cp = z.detach()
         #lower_upper = self.interval_head(z)
-        y_lower, y_upper = self.interval_upper(z), self.interval_upper(z)
+        y_lower, y_upper = self.interval_lower(z), self.interval_upper(z)
         #
         #y_preds = self.model_linear(z)
         #

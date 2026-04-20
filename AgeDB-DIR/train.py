@@ -17,7 +17,7 @@ from network import *
 import torch.optim as optim
 import time
 from scipy.stats import gmean
-from split_CP import split_cp_loss, calibrate_qhat_from_batch
+from split_CP import coverage_loss, calibrate_qhat_from_batch, calibrate_qhat_splitCP, cqr_pinball
 import torch.nn.functional as F
 import itertools
 
@@ -95,6 +95,7 @@ parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--lamb', default=0.9, type=float,  help='lamb for coverage')
 parser.add_argument('--weight', default=1, type=float,  help='weight for cp_loss in total loss')
 parser.add_argument('--alpha', default=0.1, type=float,  help='miscoverage level for conformal calibration')
+parser.add_argument('--cp_mode', type=str, default='hybrid', choices=['cqr', 'split', 'hybrid'])
 #
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
@@ -143,11 +144,24 @@ def get_data_loader(args):
     return train_loader, val_loader, test_loader, train_labels
 
 
+def resolve_stage_mode(args, epoch):
+    if args.cp_mode == 'hybrid':
+        return 'split' if epoch < args.warmup_epoch else 'cqr'
+    return args.cp_mode
+
+
+def reduce_batch_loss(loss, weight, smooth_mode):
+    if smooth_mode == 'lds':
+        return (loss * weight.expand_as(loss)).sum() / weight.sum().clamp_min(1e-12)
+    return loss.mean()
+
+
 def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
+    stage_mode = resolve_stage_mode(args, epoch)
     model.train()
     cal_iter = itertools.cycle(cal_loader)
     #
-    [opt_model] = opts
+    opt_extractor, opt_regressor, opt_cp_upper, opt_cp_lower = opts
     #
     interval_list, label_list, pred_list, z_list = [], [], [], []
     nll_loss_history = []
@@ -156,50 +170,78 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
-        #
-        y_pred, lower, upper, z = model(x)
-        if epoch < args.warmup_epoch:
-            # During warmup, only optimize the point prediction head.
-            if args.MAE:
-                point_loss = torch.abs(y_pred - y)
-            else:
-                point_loss = (y_pred - y) ** 2
-
-            if args.smooth == 'lds':
-                point_loss = (point_loss * w.expand_as(point_loss)).sum() / w.sum().clamp_min(1e-12)
-            else:
-                point_loss = point_loss.mean()
-
-            nll_loss = point_loss.to(torch.float)
-            interval = torch.zeros_like(y_pred)
-            loss = nll_loss
-
-        else:
+        if stage_mode == 'split':
             cal_batch = next(cal_iter)
-            q_hat, cp_loss = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha).detach()
-            interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
+            y_pred, _, _, z = model(x)
+            q_hat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
+            interval = torch.clamp(torch.ones_like(y_pred) * (2 * q_hat), min=1e-6)
+            variance_for_nll = interval.detach().clamp_min(1e-6)
 
             if args.MSE:
-                nll_loss = 0.5*(y_pred - y) ** 2
+                nll_loss = (y_pred - y) ** 2
             elif args.MAE:
                 nll_loss = torch.abs(y_pred - y)
             else:
-                nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+                nll_loss = beta_nll_loss(y_pred, variance_for_nll, y, args.beta)
+            nll_loss = reduce_batch_loss(nll_loss, w, args.smooth) #lds
 
-            if args.smooth == 'lds':
-                nll_loss = (nll_loss * w.expand_as(nll_loss)).sum() / w.sum().clamp_min(1e-12)
+            opt_extractor.zero_grad()
+            opt_regressor.zero_grad()
+            nll_loss.backward()
+            opt_extractor.step()
+            opt_regressor.step()
+
+        else:
+            cal_batch = next(cal_iter)
+            y_pred, _, _, z = model(x)
+
+            # Keep CQR losses on the interval heads while the backbone continues
+            # to train with the main regression objective in a separate step.
+            z_det = z.detach()
+            lower_cp = model.interval_lower(z_det)
+            upper_cp = model.interval_upper(z_det)
+            quantile_coverage = 1.0 - args.alpha
+            loss_lower, loss_upper = cqr_pinball(y, upper_cp, lower_cp, quantile_coverage)
+
+            x_cal, y_cal, _ = cal_batch
+            x_cal, y_cal = x_cal.to(device), y_cal.to(device)
+            with torch.no_grad():
+                y_cal_pred, _, _, z_cal = model(x_cal)
+            z_cal_det = z_cal.detach()
+            lower_cal = model.interval_lower(z_cal_det)
+            upper_cal = model.interval_upper(z_cal_det)
+            cp_loss = coverage_loss(y_cal, y_cal_pred.detach(), lower_cal, upper_cal, lamb=args.lamb)
+            interval_head_loss = loss_lower + loss_upper + args.weight * cp_loss
+
+            opt_cp_lower.zero_grad()
+            opt_cp_upper.zero_grad()
+            interval_head_loss.backward()
+            opt_cp_upper.step()
+            opt_cp_lower.step()
+
+            q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
+            y_pred, lower, upper, z = model(x)
+            interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
+            variance_for_nll = interval.detach().clamp_min(1e-6)
+
+            if args.MSE:
+                nll_loss = (y_pred - y) ** 2
+            elif args.MAE:
+                nll_loss = torch.abs(y_pred - y)
             else:
-                nll_loss = nll_loss.mean()
-
-            cp_loss = split_cp_loss(None, y, y_pred.detach(), lower, upper, lamb=args.lamb)
+                nll_loss = beta_nll_loss(y_pred, variance_for_nll, y, args.beta)
+            nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
 
             #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-            loss = nll_loss.to(torch.float) + args.weight * cp_loss#+ variance_loss
+            loss = nll_loss.to(torch.float)#+ variance_loss
+            opt_extractor.zero_grad()
+            opt_regressor.zero_grad()
+            loss.backward()
+            opt_extractor.step()
+            opt_regressor.step()
+
             #loss = loss.to(torch.float)
             #
-        opt_model.zero_grad()
-        loss.backward()
-        opt_model.step()
         #
         interval_list.append(interval)
         label_list.append(y)
@@ -333,10 +375,14 @@ if __name__ == '__main__':
     #
     #mi_estimator = KNIFE(args, feature_dim).to(device)
     #
-    opt_model = optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+    opt_extractor = optim.Adam(model.model_extractor.parameters(), lr=args.lr, weight_decay=5e-4)
+    opt_regressor = optim.Adam(model.pred_head.parameters(), lr=args.lr, weight_decay=5e-4)
+    opt_cp_upper = optim.Adam(model.interval_upper.parameters(), lr=args.lr, weight_decay=5e-4)
+    opt_cp_lower = optim.Adam(model.interval_lower.parameters(), lr=args.lr, weight_decay=5e-4)
+    opts = [opt_extractor, opt_regressor, opt_cp_upper, opt_cp_lower]
     #opt_mi = optim.Adam(mi_estimator.parameters(), lr=0.001, betas=(0.5, 0.999))
     #
-    opts = [opt_model]#, opt_mi#] 
+    #opts = [opt_model]#, opt_mi#] 
     #
     output_file = 'beta_' + str(args.beta) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'

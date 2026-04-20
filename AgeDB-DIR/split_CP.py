@@ -5,6 +5,7 @@ from typing import Tuple
 from conform_cqr import pinball_loss
 
 #CQR-based interval estimation
+#revise no gradient
 def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
     was_training = model.training
     model.eval()
@@ -17,9 +18,9 @@ def calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1):
         q_hat = torch.quantile(score.flatten(), 1 - alpha)
     model.train(was_training)
     # calculate the loss
-    cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
+    #cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
     #
-    return q_hat, cp_loss
+    return q_hat
 
 #split-CP based interval estimation, 90% coverage 
 def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
@@ -29,12 +30,12 @@ def calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1):
         x_cal, y_cal, _ = cal_batch
         x_cal, y_cal = x_cal.to(device), y_cal.to(device)
         y_pred, _, _, _ = model(x_cal)
-        q_hat_list = torch.sort(torch.abs(y_cal-y_pred), descending=True, dim=0).flatten()
-        q_hat = torch.quantile(q_hat_list, 1-alpha)
+        q_hat_list = torch.abs(y_cal - y_pred).flatten()
+        q_hat = torch.quantile(q_hat_list, 1 - alpha)
     model.train(was_training)
     lower, upper = y_pred-q_hat, y_pred+q_hat
-    cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
-    return q_hat, cp_loss
+    #cp_loss = coverage_loss(y_cal, y_pred, lower, upper, alpha)
+    return q_hat
 
 
 # return interval
@@ -42,7 +43,7 @@ def get_interval(model, cal_batch, device, alpha=0.1, pattern='cqr'):
     assert pattern in ['cqr', 'split']
     if pattern == 'cqr':
         return calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
-    elif pattern == 'splitCP':
+    elif pattern == 'split':
         return calibrate_qhat_splitCP(model, cal_batch, device, alpha=0.1)
     else:
         raise NotImplementedError
@@ -118,17 +119,15 @@ def coverage_loss(
 # dual output, with different tau set up, return both upper and lower loss bar
 def cqr_pinball(
         y_true : torch.Tensor,
-        y_pred : torch.Tensor,
+        upper,
+        lower,
         lamb: float
     ):
     #
     tau = 1 - lamb
-    high, low  = 1 - tau/2, 1 = tau - tau/2
-    loss_upper_quantile = pinball_loss(y_true, y_pred, high)
-    loss_lower_quantile = pinball_loss(y_true, y_pred, low)
+    high, low  = 1 - tau/2, tau/2
+    loss_upper_quantile = pinball_loss(y_true, upper, high)
+    loss_lower_quantile = pinball_loss(y_true, lower, low)
     #loss = loss_lower_quantile + loss_upper_quantile
     return loss_lower_quantile, loss_upper_quantile
-
-
-
 
