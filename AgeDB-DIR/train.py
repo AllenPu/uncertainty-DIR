@@ -171,19 +171,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
         if stage_mode == 'split':
-            cal_batch = next(cal_iter)
             y_pred, _, _, z = model(x)
-            q_hat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
-            interval = torch.clamp(torch.ones_like(y_pred) * (2 * q_hat), min=1e-6)
-            variance_for_nll = interval.detach().clamp_min(1e-6)
-
-            if args.MSE:
-                nll_loss = (y_pred - y) ** 2
-            elif args.MAE:
-                nll_loss = torch.abs(y_pred - y)
-            else:
-                nll_loss = beta_nll_loss(y_pred, variance_for_nll, y, args.beta)
-            nll_loss = reduce_batch_loss(nll_loss, w, args.smooth) #lds
+            interval = torch.zeros_like(y_pred)
+            mse_loss = (y_pred - y) ** 2
+            nll_loss = reduce_batch_loss(mse_loss, w, args.smooth)
 
             opt_extractor.zero_grad()
             opt_regressor.zero_grad()
@@ -195,13 +186,19 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             cal_batch = next(cal_iter)
             y_pred, _, _, z = model(x)
 
-            # Keep CQR losses on the interval heads while the backbone continues
-            # to train with the main regression objective in a separate step.
             z_det = z.detach()
             lower_cp = model.interval_lower(z_det)
             upper_cp = model.interval_upper(z_det)
             quantile_coverage = 1.0 - args.alpha
             loss_lower, loss_upper = cqr_pinball(y, upper_cp, lower_cp, quantile_coverage)
+
+            opt_cp_lower.zero_grad()
+            loss_lower.backward()
+            opt_cp_lower.step()
+
+            opt_cp_upper.zero_grad()
+            loss_upper.backward()
+            opt_cp_upper.step()
 
             x_cal, y_cal, _ = cal_batch
             x_cal, y_cal = x_cal.to(device), y_cal.to(device)
@@ -211,11 +208,10 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             lower_cal = model.interval_lower(z_cal_det)
             upper_cal = model.interval_upper(z_cal_det)
             cp_loss = coverage_loss(y_cal, y_cal_pred.detach(), lower_cal, upper_cal, lamb=args.lamb)
-            interval_head_loss = loss_lower + loss_upper + args.weight * cp_loss
 
             opt_cp_lower.zero_grad()
             opt_cp_upper.zero_grad()
-            interval_head_loss.backward()
+            cp_loss.backward()
             opt_cp_upper.step()
             opt_cp_lower.step()
 
@@ -451,3 +447,4 @@ if __name__ == '__main__':
 # draw the beta-NLL variance with different variance
 #
 ################
+
