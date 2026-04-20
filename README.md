@@ -42,4 +42,4 @@ Then, I have acheived:
 
 ##
 *Note*
-I have finished the train part, and every one of the loss in split-cp, cqr-pinball, and cqr-coverage, you need to finish the optimization part!!!
+I have finished the train part, and every one of the loss in split-cp, cqr-pinball, and cqr-coverage, you need to finish the optimization part!!! (which part for cp loss to BP? Which part for interval minimization to BP? Which part for lower and upper interval head to BP?)
