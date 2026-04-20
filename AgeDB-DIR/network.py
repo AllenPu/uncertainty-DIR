@@ -79,6 +79,7 @@ class ResNets(nn.Module):
     
 
 # reparameterization for mu and sigma in ResNet
+'''
 class reparam_ResNet(nn.Module):
     def __init__(self, name, args=None):
         super(ResNet_regression, self).__init__()
@@ -110,11 +111,11 @@ class reparam_ResNet(nn.Module):
         y_pred = self.regressor(feat)
         #
         return z_reparameterized, y_pred
-
+'''
 
 
 #########################################################################################################
-
+'''
 class Guassian_uncertain_ResNet(nn.Module):
     def __init__(self, name='resnet50', norm=False, weight_norm= False):
         super(Guassian_uncertain_ResNet, self).__init__()
@@ -124,12 +125,12 @@ class Guassian_uncertain_ResNet(nn.Module):
         self.weight_norm = weight_norm
         #
         self.feature_rescale = nn.Linear(dim_in, 64)
-        '''
+        
         if self.weight_norm:
             self.regressor = torch.nn.utils.weight_norm(nn.Linear(dim_in, 2), name='weight')
         else:
            self.regressor = nn.Linear(dim_in, 2)
-        '''
+        
         self.guassian_head = GaussianLikelihoodHead(inp_dim=64, outp_dim=1, use_spectral_norm_mean=weight_norm)
         #
         self.feature_dim = 64       
@@ -143,7 +144,7 @@ class Guassian_uncertain_ResNet(nn.Module):
         mean, var = self.guassian_head(feat)
 
         return feat, mean, var  
-
+'''
 
 
 
@@ -209,8 +210,8 @@ class ResNet_conformal(nn.Module):
         self.Flatten = nn.Flatten(start_dim=1)
         #
         self.pred_head =  nn.Sequential(nn.Linear(fc_inputs, 1))
-        self.interval_head = nn.Sequential(nn.Linear(fc_inputs, 2))
-
+        self.interval_upper = nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.interval_lower = nn.Sequential(nn.Linear(fc_inputs, 1))
         #self.pred_head = nn.Linear(fc_inputs, 1)
         #self.interval_head = nn.Linear(fc_inputs, 2)
 
@@ -224,8 +225,8 @@ class ResNet_conformal(nn.Module):
         z = self.Flatten(z)
         y_pred = self.pred_head(z)
         #z_cp = z.detach()
-        lower_upper = self.interval_head(z)
-        y_lower, y_upper = torch.chunk(lower_upper, 2, dim=-1)
+        #lower_upper = self.interval_head(z)
+        y_lower, y_upper = self.interval_upper(z), self.interval_upper(z)
         #
         #y_preds = self.model_linear(z)
         #

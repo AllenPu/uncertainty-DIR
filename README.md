@@ -27,7 +27,9 @@ Then, I have acheived:
         opt_regressor = optim.Adam(model.pred_head.parameters(), lr=args.lr, weight_decay=5e-4)
 
     you need to new another optimizer with:
-        opt_cp = optim.Adam(model.interval_head.parameters(), lr=args.lr, weight_decay=5e-4)
+        opt_cp_upper = optim.Adam(model.interval_upper.parameters(), lr=args.lr, weight_decay=5e-4)
+        opt_cp_lower = optim.Adam(model.interval_lower.parameters(), lr=args.lr, weight_decay=5e-4)
+        
 
     Then, in per-batch training, when you estimate the q_hat, you can also have the loss (which I achieved already):
         first, update the parameter of the main model (extractor and pred_head) with nll_loss. 
