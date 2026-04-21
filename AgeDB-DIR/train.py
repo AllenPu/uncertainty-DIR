@@ -186,93 +186,105 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         else:
             #
             cal_batch = next(cal_iter)
+            x_cal, y_cal, _ = cal_batch
+            x_cal, y_cal = x_cal.to(device), y_cal.to(device)
             # from warm_up to train the whole stage
             #
             # choose a method to train the interval prediction module
             # split cp
-            if args.inv_method is 'split':
+            if args.inv_method == 'split_cp':
                 y_pred, _, _, z = model(x)
-                qhat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
+                q_hat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
                 lower, upper = y_pred-q_hat, y_pred+q_hat
-                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
-                interval = upper-lower+2*qhat
+                cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
+                interval = upper-lower
+                if args.MSE:
+                    nll_loss = (y_pred - y) ** 2
+                elif args.MAE:
+                    nll_loss = torch.abs(y_pred - y)
+                else:
+                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
+
+                total_loss = nll_loss + args.weight * cp_loss
+
+                opt_extractor.zero_grad()
+                opt_regressor.zero_grad()
+                total_loss.backward()
+                opt_extractor.step()
+                opt_regressor.step()
+
             # cqr : pinball loss based
-            elif args.inv_method is 'cqr_pinball':
+            elif args.inv_method == 'cqr_pinball':
                 #
                 y_pred, lower, upper, z = model(x)
-                qhat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
+                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
                 #loss_lower_quantile is for lower interval head, loss_upper_quantile is for upper interval head
-                loss_lower_quantile, loss_upper_quantile = cqr_pinball(model, cal_batch, device, alpha=args.alpha)
-                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
-                interval = upper-lower+2*qhat
-            elif args.inv_method is 'cqr_coverage':
+                loss_lower_quantile, loss_upper_quantile = cqr_pinball(y, upper, lower, lamb = args.lamb)
+                cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
+                interval = torch.sqrt[(upper-lower + 2 * q_hat)/2]
+                interval_loss = interval_minimization(upper+q_hat, lower-q_hat)
+                total_interval_loss = loss_lower_quantile + loss_upper_quantile + interval_loss + cp_loss * args.weight
+
+                opt_cp_lower.zero_grad()
+                opt_cp_upper.zero_grad()
+                total_interval_loss.backward()
+                opt_cp_lower.step()
+                opt_cp_upper.step()
+
+                y_pred, lower, upper, z = model(x)
+                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
+                interval = torch.sqrt[(upper-lower + 2 * q_hat)/2]
+                if args.MSE:
+                    nll_loss = (y_pred - y) ** 2
+                elif args.MAE:
+                    nll_loss = torch.abs(y_pred - y)
+                else:
+                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
+
+                opt_extractor.zero_grad()
+                opt_regressor.zero_grad()
+                nll_loss.backward()
+                opt_extractor.step()
+                opt_regressor.step()
+
+            elif args.inv_method == 'cqr_coverage':
                 #
                 y_pred, lower, upper, z = model(x)
-                qhat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=0.1)
-                cp_loss = coverage_loss(y_cal, y_pred, lower, upper, args.alpha)
-                interval = upper-lower+2*qhat
+                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
+                cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
+                interval = upper-lower + 2 * q_hat
+                interval_loss = interval_minimization(upper+q_hat, lower-q_hat)
+
+                total_interval_loss = args.weight * cp_loss + interval_loss
+
+                opt_cp_lower.zero_grad()
+                opt_cp_upper.zero_grad()
+                total_interval_loss.backward()
+                opt_cp_lower.step()
+                opt_cp_upper.step()
+
+                y_pred, lower, upper, z = model(x)
+                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
+                interval = upper - lower + 2 * q_hat
+
+                if args.MSE:
+                    nll_loss = (y_pred - y) ** 2
+                elif args.MAE:
+                    nll_loss = torch.abs(y_pred - y)
+                else:
+                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
+                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
+
+                opt_extractor.zero_grad()
+                opt_regressor.zero_grad()
+                nll_loss.backward()
+                opt_extractor.step()
+                opt_regressor.step()
             #################
             else:
                 NotImplementedError
-
-            # this loss is to minize the interval size
-            interval_loss = interval_minimization(upper, lower)
-
-            
-            y_pred, _, _, z = model(x)
-
-            z_det = z.detach()
-            lower_cp = model.interval_lower(z_det)
-            upper_cp = model.interval_upper(z_det)
-            quantile_coverage = 1.0 - args.alpha
-            loss_lower, loss_upper = cqr_pinball(y, upper_cp, lower_cp, quantile_coverage)
-
-            opt_cp_lower.zero_grad()
-            loss_lower.backward()
-            opt_cp_lower.step()
-
-            opt_cp_upper.zero_grad()
-            loss_upper.backward()
-            opt_cp_upper.step()
-
-            x_cal, y_cal, _ = cal_batch
-            x_cal, y_cal = x_cal.to(device), y_cal.to(device)
-            with torch.no_grad():
-                y_cal_pred, _, _, z_cal = model(x_cal)
-            z_cal_det = z_cal.detach()
-            lower_cal = model.interval_lower(z_cal_det)
-            upper_cal = model.interval_upper(z_cal_det)
-            cp_loss = coverage_loss(y_cal, y_cal_pred.detach(), lower_cal, upper_cal, lamb=args.lamb)
-
-            opt_cp_lower.zero_grad()
-            opt_cp_upper.zero_grad()
-            cp_loss.backward()
-            opt_cp_upper.step()
-            opt_cp_lower.step()
-
-            q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
-            y_pred, lower, upper, z = model(x)
-            interval = torch.clamp(torch.abs(upper - lower) + 2 * q_hat, min=1e-6)
-            variance_for_nll = interval.detach().clamp_min(1e-6)
-            
-            if args.MSE:
-                nll_loss = (y_pred - y) ** 2
-            elif args.MAE:
-                nll_loss = torch.abs(y_pred - y)
-            else:
-                nll_loss = beta_nll_loss(y_pred, variance_for_nll, y, args.beta)
-            nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
-
-            #variance_loss = F.mse_loss(var_pred, var.to(torch.float32))
-            loss = nll_loss.to(torch.float)#+ variance_loss
-            opt_extractor.zero_grad()
-            opt_regressor.zero_grad()
-            loss.backward()
-            opt_extractor.step()
-            opt_regressor.step()
-
-            #loss = loss.to(torch.float)
-            #
         #
         interval_list.append(interval)
         label_list.append(y)
@@ -415,7 +427,7 @@ if __name__ == '__main__':
     #
     #opts = [opt_model]#, opt_mi#] 
     #
-    output_file = 'beta_' + str(args.beta) + '.txt'
+    output_file = 'beta_' + str(args.beta) + '_' + str(args.inv_method) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(args.epoch)):
@@ -482,4 +494,3 @@ if __name__ == '__main__':
 # draw the beta-NLL variance with different variance
 #
 ################
-
