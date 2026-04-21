@@ -43,3 +43,8 @@ Then, I have acheived:
 ##
 *TODO*
 Pls change the cal_batch to the train_batch to do the test again.
+
+Another implementation of the interval -> variance is 
+
+1. split conformal: 1-\alpha coverage under the split conformal : (|2qhat|/2.5632)^2
+2. cqe pinball: [(upper-lower)/2.5632]^2
