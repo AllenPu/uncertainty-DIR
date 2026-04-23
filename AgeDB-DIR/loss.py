@@ -5,29 +5,23 @@ import torch.nn as nn
 
 
 
-def beta_nll_loss(mean, variance, target, beta=0.5, e=0):
-    """Compute beta-NLL loss 
-    :param mean: Predicted mean of shape B x D
-    :param variance: # Predicted variance of shape B x D
-                    the differential entropy of the variance
-    :param target: Target of shape B x D
-    :param beta: Parameter from range [0, 1] controlling relative 
-        weighting between data points, where `0` corresponds to 
-        high weight on low error points and `1` to an equal weighting.
-    :returns: Loss per batch element of shape B
-    """
-    #
-    #variance = reverse_ent_to_var(ent)
-    #
-    #print(f' target {target.shape}, mean {mean.shape}, var {variance.shape}')
-    loss = 0.5 * ((target - mean) ** 2 / variance + variance.log())
-        #print('loss before', loss[:10])
+def beta_nll_components(mean, variance, target, beta=0.5):
+    """Return beta-NLL and its two per-element components."""
+    mse_component = 0.5 * ((target - mean) ** 2 / variance)
+    var_component = 0.5 * variance.log()
+
     if beta > 0:
-        loss = loss * (variance.detach() ** beta)
-    #print('loss after', loss[:10])
-    # orignal is : loss = torch.sum(loss)
-    #loss = torch.sum(loss)
-    
+        weight = variance.detach() ** beta
+        mse_component = mse_component * weight
+        var_component = var_component * weight
+
+    total_loss = mse_component + var_component
+    return total_loss, mse_component, var_component
+
+
+def beta_nll_loss(mean, variance, target, beta=0.5, e=0):
+    """Compute beta-NLL loss."""
+    loss, _, _ = beta_nll_components(mean, variance, target, beta=beta)
     return loss
 
 

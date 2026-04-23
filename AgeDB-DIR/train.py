@@ -157,6 +157,26 @@ def reduce_batch_loss(loss, weight, smooth_mode):
     return loss.mean()
 
 
+def compute_point_loss_components(args, y_pred, interval, y, w):
+    """Return total point loss plus beta-NLL subcomponents after batch reduction."""
+    if args.MSE:
+        point_loss = (y_pred - y) ** 2
+        mse_component = point_loss
+        var_component = torch.zeros_like(point_loss)
+    elif args.MAE:
+        point_loss = torch.abs(y_pred - y)
+        mse_component = torch.zeros_like(point_loss)
+        var_component = torch.zeros_like(point_loss)
+    else:
+        point_loss, mse_component, var_component = beta_nll_components(
+            y_pred, interval, y, beta=args.beta
+        )
+
+    point_loss = reduce_batch_loss(point_loss, w, args.smooth)
+    mse_component = reduce_batch_loss(mse_component, w, args.smooth)
+    var_component = reduce_batch_loss(var_component, w, args.smooth)
+    return point_loss, mse_component, var_component
+
 def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     stage_mode = resolve_stage_mode(args, epoch)
     model.train()
@@ -166,16 +186,22 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     #
     interval_list, label_list, pred_list, z_list = [], [], [], []
     nll_loss_history = []
+    nll_mse_history = []
+    nll_var_history = []
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
         #
         x, y, w  = x.to(device), y.to(device), w.to(device)
+        train_batch = (x, y, w)
+
         if stage_mode == 'warmup':
             y_pred, _, _, z = model(x)
             interval = torch.zeros_like(y_pred)
             mse_loss = (y_pred - y) ** 2
             nll_loss = reduce_batch_loss(mse_loss, w, args.smooth)
+            nll_mse_component = nll_loss.detach()
+            nll_var_component = torch.zeros_like(nll_loss)
 
             opt_extractor.zero_grad()
             opt_regressor.zero_grad()
@@ -194,106 +220,130 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             # split cp
             if args.inv_method == 'split_cp':
                 y_pred, _, _, z = model(x)
-                q_hat = calibrate_qhat_splitCP(model, cal_batch, device, alpha=args.alpha)
+                q_hat = calibrate_qhat_splitCP(model, train_batch, device, alpha=args.alpha)
                 lower, upper = y_pred-q_hat, y_pred+q_hat
                 cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
-                interval = upper-lower
-                if args.MSE:
-                    nll_loss = (y_pred - y) ** 2
-                elif args.MAE:
-                    nll_loss = torch.abs(y_pred - y)
-                else:
-                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
+                interval = (abs(upper-lower)/2.5652) ** 2
 
-                total_loss = nll_loss + args.weight * cp_loss
+                nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(args, y_pred, interval, y, w)
+                total_loss = nll_loss
+                if args.inv_method == 'split_cp':
+                    total_loss = total_loss + args.weight * cp_loss
 
                 opt_extractor.zero_grad()
                 opt_regressor.zero_grad()
                 total_loss.backward()
                 opt_extractor.step()
                 opt_regressor.step()
-
             # cqr : pinball loss based
             elif args.inv_method == 'cqr_pinball':
-                #
                 y_pred, lower, upper, z = model(x)
-                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
-                #loss_lower_quantile is for lower interval head, loss_upper_quantile is for upper interval head
-                loss_lower_quantile, loss_upper_quantile = cqr_pinball(y, upper, lower, lamb = args.lamb)
+                q_hat = calibrate_qhat_from_batch(model, train_batch, device, alpha=args.alpha)
+
+                loss_lower_quantile, loss_upper_quantile = cqr_pinball(y, upper, lower, lamb=args.lamb)
                 cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
-                interval = torch.sqrt[(upper-lower + 2 * q_hat)/2]
-                interval_loss = interval_minimization(upper+q_hat, lower-q_hat)
-                total_interval_loss = loss_lower_quantile + loss_upper_quantile + interval_loss + cp_loss * args.weight
+                interval = ((upper - lower) / 2.5632) ** 2
+                interval_loss = interval_minimization(upper + q_hat, lower - q_hat)
+
+                total_interval_loss = (loss_lower_quantile + loss_upper_quantile + interval_loss + args.weight * cp_loss)
+
+                nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(
+                    args, y_pred, interval, y, w)
+
+                cp_params = list(model.interval_lower.parameters()) + list(model.interval_upper.parameters())
+                main_params = list(model.model_extractor.parameters()) + list(model.pred_head.parameters())
+
+                grads_cp = torch.autograd.grad(
+                    total_interval_loss,
+                    cp_params,
+                    retain_graph=True,
+                    allow_unused=False,)
+                grads_main = torch.autograd.grad(
+                    nll_loss,
+                    main_params,
+                    retain_graph=False,
+                    allow_unused=False,)
 
                 opt_cp_lower.zero_grad()
                 opt_cp_upper.zero_grad()
-                total_interval_loss.backward()
-                opt_cp_lower.step()
-                opt_cp_upper.step()
-
-                y_pred, lower, upper, z = model(x)
-                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
-                interval = torch.sqrt[(upper-lower + 2 * q_hat)/2]
-                if args.MSE:
-                    nll_loss = (y_pred - y) ** 2
-                elif args.MAE:
-                    nll_loss = torch.abs(y_pred - y)
-                else:
-                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
-
                 opt_extractor.zero_grad()
                 opt_regressor.zero_grad()
-                nll_loss.backward()
+
+                for p, g in zip(cp_params, grads_cp):
+                    p.grad = g
+
+                for p, g in zip(main_params, grads_main):
+                    p.grad = g
+
+                opt_cp_lower.step()
+                opt_cp_upper.step()
                 opt_extractor.step()
                 opt_regressor.step()
+
 
             elif args.inv_method == 'cqr_coverage':
                 #
                 y_pred, lower, upper, z = model(x)
                 q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
                 cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
-                interval = upper-lower + 2 * q_hat
-                interval_loss = interval_minimization(upper+q_hat, lower-q_hat)
+                interval = ((upper - lower) / 2.5632) ** 2
+                interval_loss = interval_minimization(upper, lower)
 
                 total_interval_loss = args.weight * cp_loss + interval_loss
 
+                nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(
+                    args, y_pred, interval, y, w)
+
+                cp_params = list(model.interval_lower.parameters()) + list(model.interval_upper.parameters())
+                main_params = list(model.model_extractor.parameters()) + list(model.pred_head.parameters())
+
+                grads_cp = torch.autograd.grad(
+                    total_interval_loss,
+                    cp_params,
+                    retain_graph=True,
+                    allow_unused=False,)
+                grads_main = torch.autograd.grad(
+                    nll_loss,
+                    main_params,
+                    retain_graph=False,
+                    allow_unused=False,)
+
                 opt_cp_lower.zero_grad()
                 opt_cp_upper.zero_grad()
-                total_interval_loss.backward()
-                opt_cp_lower.step()
-                opt_cp_upper.step()
-
-                y_pred, lower, upper, z = model(x)
-                q_hat = calibrate_qhat_from_batch(model, cal_batch, device, alpha=args.alpha)
-                interval = upper - lower + 2 * q_hat
-
-                if args.MSE:
-                    nll_loss = (y_pred - y) ** 2
-                elif args.MAE:
-                    nll_loss = torch.abs(y_pred - y)
-                else:
-                    nll_loss = beta_nll_loss(y_pred, interval, y, args.beta)
-                nll_loss = reduce_batch_loss(nll_loss, w, args.smooth)
-
                 opt_extractor.zero_grad()
                 opt_regressor.zero_grad()
-                nll_loss.backward()
+
+                for p, g in zip(cp_params, grads_cp):
+                    p.grad = g
+
+                for p, g in zip(main_params, grads_main):
+                    p.grad = g
+
+                opt_cp_lower.step()
+                opt_cp_upper.step()
                 opt_extractor.step()
                 opt_regressor.step()
+
             #################
             else:
                 NotImplementedError
+
+        
+            
+            
         #
-        interval_list.append(interval)
-        label_list.append(y)
-        pred_list.append(y_pred)
-        z_list.append(z)
+        interval_list.append(interval.detach())
+        label_list.append(y.detach())
+        pred_list.append(y_pred.detach())
+        z_list.append(z.detach())
         nll_loss_history.append(nll_loss.item())
+        nll_mse_history.append(nll_mse_component.item())
+        nll_var_history.append(nll_var_component.item())
     #
     vars, labels, preds, z_  = torch.cat(interval_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     epoch_nll_loss = float(np.mean(nll_loss_history)) if nll_loss_history else 0.0
+    epoch_nll_mse = float(np.mean(nll_mse_history)) if nll_mse_history else 0.0
+    epoch_nll_var = float(np.mean(nll_var_history)) if nll_var_history else 0.0
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
@@ -312,7 +362,15 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
     #
-    pred_results = [str(uncer_maj), str(uncer_med), str(uncer_low), str(uncer_total), str(epoch_nll_loss)]
+    pred_results = [
+        str(uncer_maj),
+        str(uncer_med),
+        str(uncer_low),
+        str(uncer_total),
+        str(epoch_nll_loss),
+        str(epoch_nll_mse),
+        str(epoch_nll_var),
+    ]
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
