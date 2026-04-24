@@ -92,10 +92,16 @@ parser.add_argument('--scale', type=float, default=1, help='scale of the sharpne
 #parser.add_argument('--diversity', type=float, default=0, help='scale of the diversity loss in regressor output')
 parser.add_argument('--fd_ratio', type=float, default=0, help='scale of the diversity loss in z')
 parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
+parser.add_argument('--variance_mse_threshold', type=float, default=1,
+                    help='after warmup, switch samples with variance below this threshold from NLL to MSE')
 parser.add_argument('--lamb', default=0.9, type=float,  help='lamb for coverage')
 parser.add_argument('--weight', default=1, type=float,  help='weight for cp_loss in total loss')
 parser.add_argument('--alpha', default=0.1, type=float,  help='miscoverage level for conformal calibration')
 parser.add_argument('--cp_mode', type=str, default='hybrid', choices=['cqr', 'split', 'hybrid'])
+parser.add_argument('--warmup_ckpt_path', type=str, default='',
+                    help='path to save the final warmup checkpoint; defaults to <store_root>/<store_name>/warmup_final.pth.tar')
+parser.add_argument('--resume_warmup_ckpt', type=str, default='',
+                    help='path to a saved warmup checkpoint to resume from')
 #
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
 parser.add_argument('--weight_norm', action='store_true', help='if use the weight norm for train')
@@ -108,7 +114,7 @@ parser.add_argument('--MAE', action='store_true', help='only use MAE or not')
 parser.add_argument('--reweight', type=str, default='inv',  choices=['inv', 'sqrt_inverse'],
                     help='weight : inv or sqrt_inv')
 parser.add_argument('--smooth', default='none', choices=['lds', 'none'], help='use LDS or not')
-parser.add_argument('--inv_method', default='split_cp', choices=['split_cp', 'cqr_pinball', 'cqr_coverage'], help='use which method to train interval module')
+parser.add_argument('--inv_method', default='cqr_pinball', choices=['split_cp', 'cqr_pinball', 'cqr_coverage'], help='use which method to train interval module')
 #
 #
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -151,10 +157,80 @@ def resolve_stage_mode(args, epoch):
     return args.cp_mode
 
 
+def get_checkpoint_dir(args):
+    return os.path.join(args.store_root, args.store_name) if args.store_name else args.store_root
+
+
+def get_warmup_checkpoint_path(args):
+    if args.warmup_ckpt_path:
+        return args.warmup_ckpt_path
+    return os.path.join(get_checkpoint_dir(args), 'warmup_final.pth.tar')
+
+
+def save_warmup_checkpoint(args, model, opts, epoch):
+    if args.warmup_epoch <= 0 or epoch != args.warmup_epoch - 1:
+        return
+
+    opt_extractor, opt_regressor, opt_cp_upper, opt_cp_lower = opts
+    ckpt_path = get_warmup_checkpoint_path(args)
+    ckpt_dir = os.path.dirname(ckpt_path)
+    if ckpt_dir:
+        os.makedirs(ckpt_dir, exist_ok=True)
+
+    checkpoint = {
+        'epoch': epoch,
+        'next_epoch': epoch + 1,
+        'warmup_epoch': args.warmup_epoch,
+        'model_state_dict': model.state_dict(),
+        'opt_extractor_state_dict': opt_extractor.state_dict(),
+        'opt_regressor_state_dict': opt_regressor.state_dict(),
+        'opt_cp_upper_state_dict': opt_cp_upper.state_dict(),
+        'opt_cp_lower_state_dict': opt_cp_lower.state_dict(),
+    }
+    torch.save(checkpoint, ckpt_path)
+    print(f' Saved warmup checkpoint to {ckpt_path}')
+
+
+def maybe_resume_from_warmup_checkpoint(args, model, opts):
+    if not args.resume_warmup_ckpt:
+        return 0
+
+    ckpt_path = args.resume_warmup_ckpt
+    checkpoint = torch.load(ckpt_path, map_location=device)
+    model.load_state_dict(checkpoint['model_state_dict'])
+
+    opt_extractor, opt_regressor, opt_cp_upper, opt_cp_lower = opts
+    if 'opt_extractor_state_dict' in checkpoint:
+        opt_extractor.load_state_dict(checkpoint['opt_extractor_state_dict'])
+    if 'opt_regressor_state_dict' in checkpoint:
+        opt_regressor.load_state_dict(checkpoint['opt_regressor_state_dict'])
+    if 'opt_cp_upper_state_dict' in checkpoint:
+        opt_cp_upper.load_state_dict(checkpoint['opt_cp_upper_state_dict'])
+    if 'opt_cp_lower_state_dict' in checkpoint:
+        opt_cp_lower.load_state_dict(checkpoint['opt_cp_lower_state_dict'])
+
+    start_epoch = checkpoint.get('next_epoch', checkpoint.get('epoch', -1) + 1)
+    print(f' Loaded warmup checkpoint from {ckpt_path}, resuming at epoch {start_epoch}')
+    return start_epoch
+
+
 def reduce_batch_loss(loss, weight, smooth_mode):
     if smooth_mode == 'lds':
         return (loss * weight.expand_as(loss)).sum() / weight.sum().clamp_min(1e-12)
     return loss.mean()
+
+
+def maybe_switch_low_variance_to_mse(args, point_loss, mse_component, var_component, y_pred, interval, y):
+    threshold = args.variance_mse_threshold
+    if args.MSE or args.MAE or threshold is None:
+        return point_loss, mse_component, var_component
+
+    mse_loss = (y_pred - y) ** 2
+    low_variance_mask = interval < threshold
+    point_loss = torch.where(low_variance_mask, mse_loss, point_loss)
+    mse_component = torch.where(low_variance_mask, mse_loss, mse_component)
+    var_component = torch.where(low_variance_mask, torch.zeros_like(var_component), var_component)
+    return point_loss, mse_component, var_component
 
 
 def compute_point_loss_components(args, y_pred, interval, y, w):
@@ -170,6 +246,9 @@ def compute_point_loss_components(args, y_pred, interval, y, w):
     else:
         point_loss, mse_component, var_component = beta_nll_components(
             y_pred, interval, y, beta=args.beta
+        )
+        point_loss, mse_component, var_component = maybe_switch_low_variance_to_mse(
+            args, point_loss, mse_component, var_component, y_pred, interval, y
         )
 
     point_loss = reduce_batch_loss(point_loss, w, args.smooth)
@@ -243,7 +322,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
                 loss_lower_quantile, loss_upper_quantile = cqr_pinball(y, upper, lower, lamb=args.lamb)
                 cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
                 interval = ((upper - lower) / 2.5632) ** 2
-                interval_loss = interval_minimization(upper + q_hat, lower - q_hat)
+                interval_loss = interval_minimization(upper, lower)
 
                 total_interval_loss = (loss_lower_quantile + loss_upper_quantile + interval_loss + args.weight * cp_loss)
 
@@ -461,6 +540,8 @@ def write_log(store_name, mae_pred, shot_pred, gmean_pred):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    if args.variance_mse_threshold is not None and args.variance_mse_threshold < 0:
+        raise ValueError('--variance_mse_threshold must be non-negative.')
     setup_seed(args.seed)
     store_name = ''
     #
@@ -485,11 +566,13 @@ if __name__ == '__main__':
     #
     #opts = [opt_model]#, opt_mi#] 
     #
-    output_file = 'beta_' + str(args.beta) + '_' + str(args.inv_method) + '.txt'
+    start_epoch = maybe_resume_from_warmup_checkpoint(args, model, opts)
+    output_file = 'beta_' + str(args.beta) + '_with_variance_threshold' + str(args.inv_method) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
-    for e in tqdm(range(args.epoch)):
+    for e in tqdm(range(start_epoch, args.epoch)):
         model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
+        save_warmup_checkpoint(args, model, opts, e)
         mae_pred = test(model, test_loader, train_labels, args)
         #
         # record the prediction variance (from predicted labels) and model output variance respectively
