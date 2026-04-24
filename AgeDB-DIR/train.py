@@ -220,6 +220,23 @@ def reduce_batch_loss(loss, weight, smooth_mode):
     return loss.mean()
 
 
+def compute_interval_coverage(lower, upper, label, maj, med, low, device):
+    covered = ((label >= lower) & (label <= upper)).to(torch.float)
+
+    def group_coverage(group_labels):
+        group_tensor = torch.as_tensor(group_labels, device=device)
+        group_indices = torch.nonzero(torch.isin(label, group_tensor), as_tuple=False)
+        if group_indices.numel() == 0:
+            return float('nan')
+        return covered[group_indices[:, 0]].squeeze(-1).mean().item()
+
+    maj_cov = group_coverage(maj)
+    med_cov = group_coverage(med)
+    low_cov = group_coverage(low)
+    total_cov = covered.squeeze(-1).mean().item()
+    return maj_cov, med_cov, low_cov, total_cov
+
+
 def maybe_switch_low_variance_to_mse(args, point_loss, mse_component, var_component, y_pred, interval, y):
     threshold = args.variance_mse_threshold
     if args.MSE or args.MAE or threshold is None:
@@ -264,6 +281,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     opt_extractor, opt_regressor, opt_cp_upper, opt_cp_lower = opts
     #
     interval_list, label_list, pred_list, z_list = [], [], [], []
+    lower_list, upper_list = [], []
     nll_loss_history = []
     nll_mse_history = []
     nll_var_history = []
@@ -281,6 +299,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             nll_loss = reduce_batch_loss(mse_loss, w, args.smooth)
             nll_mse_component = nll_loss.detach()
             nll_var_component = torch.zeros_like(nll_loss)
+            lower, upper = None, None
 
             opt_extractor.zero_grad()
             opt_regressor.zero_grad()
@@ -415,6 +434,9 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         label_list.append(y.detach())
         pred_list.append(y_pred.detach())
         z_list.append(z.detach())
+        if lower is not None and upper is not None:
+            lower_list.append(lower.detach())
+            upper_list.append(upper.detach())
         nll_loss_history.append(nll_loss.item())
         nll_mse_history.append(nll_mse_component.item())
         nll_var_history.append(nll_var_component.item())
@@ -440,6 +462,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         # the variance from the target predictions
         uncer_pred_maj, uncer_pred_med, uncer_pred_low, uncer_pred_total  = \
             label_uncertainty_accumulation(preds, labels, maj, med, low, device)
+    if lower_list and upper_list:
+        lowers, uppers = torch.cat(lower_list, 0), torch.cat(upper_list, 0)
+        coverage_maj, coverage_med, coverage_low, coverage_total = compute_interval_coverage(
+            lowers, uppers, labels, maj, med, low, device
+        )
+    else:
+        coverage_maj = coverage_med = coverage_low = coverage_total = float('nan')
     #
     pred_results = [
         str(uncer_maj),
@@ -450,12 +479,18 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         str(epoch_nll_mse),
         str(epoch_nll_var),
     ]
+    coverage_results = [
+        str(coverage_maj),
+        str(coverage_med),
+        str(coverage_low),
+        str(coverage_total),
+    ]
     #
     vars_results_from_pred = [str(uncer_pred_maj), str(uncer_pred_med), str(uncer_pred_low), str(uncer_pred_total)]
     #
     
 
-    return model, pred_results,  vars_results_from_pred
+    return model, pred_results, coverage_results, vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -571,7 +606,7 @@ if __name__ == '__main__':
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(start_epoch, args.epoch)):
-        model, pred_results,  vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
+        model, pred_results, coverage_results, vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
         save_warmup_checkpoint(args, model, opts, e)
         mae_pred = test(model, test_loader, train_labels, args)
         #
@@ -580,7 +615,7 @@ if __name__ == '__main__':
         
         with open('nll_' + output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(pred_results) + " "+ " ".join(vars_results_from_pred) + " " + str(mae_pred) + '\n')
+            file.write(" ".join(pred_results) + " " + " ".join(coverage_results) + " " + " ".join(vars_results_from_pred) + " " + str(mae_pred) + '\n')
             #file.write(" ".join(vars_results_from_pred) + '\n')
             file.close()
         
