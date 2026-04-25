@@ -235,3 +235,40 @@ class ResNet_conformal(nn.Module):
         #print(f' y pred shape {y_pred.shape} y preds shape {y_preds.shape}')
         #
         return y_pred, y_lower, y_upper, z
+
+
+##################################################
+
+class ResNet_conformal(nn.Module):
+    def __init__(self, args=None):
+        super(ResNet_conformal, self).__init__()
+        self.args = args
+        exec('self.model = torchvision.models.resnet{}(pretrained=False)'.format(args.model_depth))
+        #
+        #self.norm, self.weight_norm = args.norm, args.weight_norm
+        #
+        fc_inputs = self.model.fc.in_features
+        #
+        self.model_extractor = nn.Sequential(*list(self.model.children())[:-1])
+        #
+        self.Flatten = nn.Flatten(start_dim=1)
+        #
+        self.reg_head =  nn.Sequential(nn.Linear(fc_inputs, 1))
+        self.cls_head =  nn.Sequential(nn.Linear(fc_inputs, 10))
+        #self.pred_head = nn.Linear(fc_inputs, 1)
+        #self.interval_head = nn.Linear(fc_inputs, 2)
+
+        
+        
+    # g is the same shape of y
+    def forward(self, x):
+        #"output of model dim is 2G"
+        z = self.model_extractor(x)
+        #
+        z = self.Flatten(z)
+        y_pred = self.pred_head(z)
+        #z_cp = z.detach()
+        #lower_upper = self.interval_head(z)
+        cls_pred = self.cls_head(z)
+        #
+        return y_pred, cls_pred, z
