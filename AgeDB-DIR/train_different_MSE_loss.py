@@ -1,3 +1,4 @@
+# train the model with different shot of labels with different MSE (for median and minority) and MAE (for majority)
 import time
 import argparse
 import logging
