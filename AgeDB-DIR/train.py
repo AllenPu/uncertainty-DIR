@@ -95,12 +95,12 @@ parser.add_argument('--beta', default=0.5, type=float,  help='beta for nll')
 parser.add_argument('--variance_mse_threshold', type=float, default=1,
                     help='after warmup, switch samples with variance below this threshold from NLL to MSE')
 parser.add_argument('--lamb', default=0.9, type=float,  help='lamb for coverage')
-parser.add_argument('--weight', default=1, type=float,  help='weight for cp_loss in total loss')
+parser.add_argument('--weight', default=0.1, type=float,  help='weight for interval_loss in total loss')
 parser.add_argument('--alpha', default=0.1, type=float,  help='miscoverage level for conformal calibration')
 parser.add_argument('--cp_mode', type=str, default='hybrid', choices=['cqr', 'split', 'hybrid'])
 parser.add_argument('--warmup_ckpt_path', type=str, default='',
                     help='path to save the final warmup checkpoint; defaults to <store_root>/<store_name>/warmup_final.pth.tar')
-parser.add_argument('--resume_warmup_ckpt', type=str, default='',
+parser.add_argument('--resume_warmup_ckpt', type=str, default='checkpoint/warmup_final.pth.tar',
                     help='path to a saved warmup checkpoint to resume from')
 #
 parser.add_argument('--asymm', action='store_true', help='if use the asymmetric soft label')
@@ -285,6 +285,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     nll_loss_history = []
     nll_mse_history = []
     nll_var_history = []
+    pinball_lower_history = []
+    pinball_upper_history = []
+    pinball_total_history = []
+    cp_loss_history = []
+    interval_loss_history = []
+    weighted_interval_history = []
+    total_interval_loss_history = []
     #
     for idx, (x, y, w) in enumerate(train_loader):
         #print('shape is', x.shape, y.shape, g.shape)
@@ -300,6 +307,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
             nll_mse_component = nll_loss.detach()
             nll_var_component = torch.zeros_like(nll_loss)
             lower, upper = None, None
+            pinball_lower_value = float('nan')
+            pinball_upper_value = float('nan')
+            cp_loss_value = float('nan')
+            weighted_interval_loss_value = float('nan')
+            interval_loss_value = float('nan')
+            total_interval_loss_value = float('nan')
 
             opt_extractor.zero_grad()
             opt_regressor.zero_grad()
@@ -322,6 +335,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
                 lower, upper = y_pred-q_hat, y_pred+q_hat
                 cp_loss = coverage_loss(y, y_pred, lower, upper, args.lamb)
                 interval = (abs(upper-lower)/2.5652) ** 2
+                pinball_lower_value = float('nan')
+                pinball_upper_value = float('nan')
+                cp_loss_value = cp_loss.item()
+                weighted_interval_loss_value = float('nan')
+                interval_loss_value = float('nan')
+                total_interval_loss_value = (args.weight * cp_loss).item()
 
                 nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(args, y_pred, interval, y, w)
                 total_loss = nll_loss
@@ -343,7 +362,13 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
                 interval = ((upper - lower) / 2.5632) ** 2
                 interval_loss = interval_minimization(upper, lower)
 
-                total_interval_loss = (loss_lower_quantile + loss_upper_quantile + interval_loss + args.weight * cp_loss)
+                total_interval_loss = (loss_lower_quantile + loss_upper_quantile + args.weight *interval_loss + cp_loss)
+                pinball_lower_value = loss_lower_quantile.item()
+                pinball_upper_value = loss_upper_quantile.item()
+                cp_loss_value = cp_loss.item()
+                interval_loss_value = interval_loss.item()
+                weighted_interval_loss_value = (args.weight * interval_loss).item()
+                total_interval_loss_value = total_interval_loss.item()
 
                 nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(
                     args, y_pred, interval, y, w)
@@ -388,6 +413,12 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
                 interval_loss = interval_minimization(upper, lower)
 
                 total_interval_loss = args.weight * cp_loss + interval_loss
+                pinball_lower_value = float('nan')
+                pinball_upper_value = float('nan')
+                cp_loss_value = cp_loss.item()
+                weighted_interval_loss_value = (args.weight * interval_loss).item()
+                interval_loss_value = interval_loss.item()
+                total_interval_loss_value = total_interval_loss.item()
 
                 nll_loss, nll_mse_component, nll_var_component = compute_point_loss_components(
                     args, y_pred, interval, y, w)
@@ -440,11 +471,32 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         nll_loss_history.append(nll_loss.item())
         nll_mse_history.append(nll_mse_component.item())
         nll_var_history.append(nll_var_component.item())
+        pinball_lower_history.append(pinball_lower_value)
+        pinball_upper_history.append(pinball_upper_value)
+        pinball_total_history.append(pinball_lower_value + pinball_upper_value)
+        cp_loss_history.append(cp_loss_value)
+        weighted_interval_history.append(weighted_interval_loss_value)
+        interval_loss_history.append(interval_loss_value)
+        total_interval_loss_history.append(total_interval_loss_value)
     #
     vars, labels, preds, z_  = torch.cat(interval_list, 0), torch.cat(label_list, 0), torch.cat(pred_list, 0), torch.cat(z_list, 0)
     epoch_nll_loss = float(np.mean(nll_loss_history)) if nll_loss_history else 0.0
     epoch_nll_mse = float(np.mean(nll_mse_history)) if nll_mse_history else 0.0
     epoch_nll_var = float(np.mean(nll_var_history)) if nll_var_history else 0.0
+
+    def mean_or_nan(values):
+        valid_values = [v for v in values if not np.isnan(v)]
+        if not valid_values:
+            return float('nan')
+        return float(np.mean(valid_values))
+
+    epoch_pinball_lower = mean_or_nan(pinball_lower_history)
+    epoch_pinball_upper = mean_or_nan(pinball_upper_history)
+    epoch_pinball_total = mean_or_nan(pinball_total_history)
+    epoch_cp_loss = mean_or_nan(cp_loss_history)
+    epoch_weighted_interval_loss = mean_or_nan(weighted_interval_history)
+    epoch_interval_loss = mean_or_nan(interval_loss_history)
+    epoch_total_interval_loss = mean_or_nan(total_interval_loss_history)
     #
     #mae_dict = per_label_mae(preds , labels)
     #mae_dict = per_label_frobenius_norm(z_, labels)
@@ -479,6 +531,15 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
         str(epoch_nll_mse),
         str(epoch_nll_var),
     ]
+    interval_loss_results = [
+        str(epoch_pinball_lower),
+        str(epoch_pinball_upper),
+        str(epoch_pinball_total),
+        str(epoch_cp_loss),
+        str(epoch_weighted_interval_loss),
+        str(epoch_interval_loss),
+        str(epoch_total_interval_loss),
+    ]
     coverage_results = [
         str(coverage_maj),
         str(coverage_med),
@@ -490,7 +551,7 @@ def train_one_epoch(args, model, train_loader, cal_loader, opts, epoch):
     #
     
 
-    return model, pred_results, coverage_results, vars_results_from_pred
+    return model, pred_results, interval_loss_results, coverage_results, vars_results_from_pred
 
 
 def test(model, test_loader, train_labels, args):
@@ -602,11 +663,11 @@ if __name__ == '__main__':
     #opts = [opt_model]#, opt_mi#] 
     #
     start_epoch = maybe_resume_from_warmup_checkpoint(args, model, opts)
-    output_file = 'beta_' + str(args.beta) + '_with_variance_threshold' + str(args.inv_method) + '.txt'
+    output_file = 'beta_' + str(args.beta) + '_with_variance_threshold_showloss' + str(args.inv_method) + '.txt'
     #output_file = 'nll_output_vs_pred' + '_beta_' + str(args.beta) + '.txt'
     #
     for e in tqdm(range(start_epoch, args.epoch)):
-        model, pred_results, coverage_results, vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
+        model, pred_results, interval_loss_results, coverage_results, vars_results_from_pred = train_one_epoch(args, model, train_loader, val_loader, opts, e)
         save_warmup_checkpoint(args, model, opts, e)
         mae_pred = test(model, test_loader, train_labels, args)
         #
@@ -615,7 +676,7 @@ if __name__ == '__main__':
         
         with open('nll_' + output_file, "a+") as file:
             file.write(str(e)+" ")
-            file.write(" ".join(pred_results) + " " + " ".join(coverage_results) + " " + " ".join(vars_results_from_pred) + " " + str(mae_pred) + '\n')
+            file.write(" ".join(pred_results) + " " + " ".join(interval_loss_results) + " " + " ".join(coverage_results) + " " + " ".join(vars_results_from_pred) + " " + str(mae_pred) + '\n')
             #file.write(" ".join(vars_results_from_pred) + '\n')
             file.close()
         

@@ -106,7 +106,7 @@ def coverage_loss(
     #
     bound_penalty = F.relu(lower - prediction) + F.relu(prediction - upper)
     #coverage
-    k=10
+    k=5
     soft_covered = torch.sigmoid(k * (true - lower)) * torch.sigmoid(k * (upper - true))
     coverage = soft_covered.mean()
     coverage_penalty = torch.relu(lamb - coverage)
