@@ -239,9 +239,9 @@ class ResNet_conformal(nn.Module):
 
 ##################################################
 
-class ResNet_conformal(nn.Module):
+class ResNet_cls_uncertain(nn.Module):
     def __init__(self, args=None):
-        super(ResNet_conformal, self).__init__()
+        super(ResNet_cls_uncertain, self).__init__()
         self.args = args
         exec('self.model = torchvision.models.resnet{}(pretrained=False)'.format(args.model_depth))
         #
