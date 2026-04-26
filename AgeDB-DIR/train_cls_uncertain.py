@@ -88,6 +88,17 @@ def tolerance(g_pred, g, ranges):
     #
     return tolerance
 
+
+
+
+
+def predictive_entropy_from_logits(logits, eps=1e-12):
+    probs = F.softmax(logits, dim=1)
+    probs = probs.clamp(min=eps)
+    return -(probs * probs.log()).sum(dim=1)
+
+
+
 def get_data_loader(args):
     print('=====> Preparing data...')
     df = pd.read_csv(os.path.join(args.data_dir, "agedb.csv"))
@@ -126,23 +137,16 @@ def train_one_epoch(model, train_loader, ce_loss, mse_loss, opt, args):
         opt.zero_grad()
         x, y, g = x.to(device), y.to(device), g.to(device)
         #
-        y_output = model(x)
+        y_pred, cls_pred, z = model(x)
         #
-        y_chunk = torch.chunk(y_output, 2, dim=1)
-        g_hat, y_pred = y_chunk[0], y_chunk[1]
+        mse_y = mse_loss(y_pred, y)
         #
-        g_index = torch.argmax(g_hat, dim=1).unsqueeze(-1)
-        #print('g_hat ', g_hat)
+        ce_uncer = predictive_entropy_from_logits(cls_pred)
+
         #
-        y_hat = torch.gather(y_pred, dim = 1, index=g.to(torch.int64))
+        cls_loss = ce_loss(cls_pred, cls)
         #
-        mse_y = mse_loss(y_hat, y)
-        #
-        tol = 5/tolerance(g_index.cpu(), g.cpu(), ranges)
-        #
-        ce_g = ce_loss(g_hat, g.squeeze().long())
-        #
-        loss = tol*mse_y + ce_g
+        loss = mse_y + ce_uncer +  cls_loss
         #
         loss.backward()
         opt.step()
