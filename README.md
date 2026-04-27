@@ -39,12 +39,14 @@ Then, I have acheived:
     If you are going to use the pinball loss, you should use different backpropagations optimizers.
     The pinball loss we output has 2 heads : one is the upper loss and the other is the lower loss, you should use the upper loss to update the upper_optimizer and vice verse
 
+###
+it seems conformal style work is not applicable to the imbalance
 
 ##
 *TODO*
-Pls change the cal_batch to the train_batch to do the test again.
+define the number of classes
 
-Another implementation of the interval -> variance is 
+dynamically adjust the bin width of the class
 
-1. split conformal: 1-\alpha coverage under the split conformal : (|2qhat|/2.5632)^2
-2. cqe pinball: [(upper-lower)/2.5632]^2
+
+current loss is : regression loss/NLL, cls loss, cls entropy loss
