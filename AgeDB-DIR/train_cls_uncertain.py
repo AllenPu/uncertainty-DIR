@@ -153,6 +153,15 @@ def train_one_epoch(model, train_loader, ce_loss, mse_loss, opt, args):
     return model
 
 
+
+def calibrate_cls_width(model, cal_loader):
+    model.eval()
+    #
+    # use the validation set to adjust the cls width based on uncertainty
+    #
+    return 
+
+
 def test(model, test_loader,train_labels, args):
     model.eval()
     #
