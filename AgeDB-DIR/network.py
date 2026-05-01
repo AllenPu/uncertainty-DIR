@@ -254,7 +254,7 @@ class ResNet_cls_uncertain(nn.Module):
         self.Flatten = nn.Flatten(start_dim=1)
         #
         self.reg_head =  nn.Sequential(nn.Linear(fc_inputs, 1))
-        self.cls_head =  nn.Sequential(nn.Linear(fc_inputs, 10))
+        self.cls_head =  nn.Sequential(nn.Linear(fc_inputs, args.groups))
         #self.pred_head = nn.Linear(fc_inputs, 1)
         #self.interval_head = nn.Linear(fc_inputs, 2)
 
